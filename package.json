@@ -1,0 +1,33 @@
+{
+  "name": "automation-exercise-tests",
+  "version": "1.0.0",
+  "description": "Automation Exercise E-commerce Testing Framework with Playwright and TypeScript",
+  "main": "index.js",
+  "scripts": {
+    "tests:e2e-debug": "playwright test src/tests/user-interface --config=src/configs/playwright.config.ui.ts --project=Chromium --debug",
+    "tests:e2e": "playwright test src/tests/user-interface --config=src/configs/playwright.config.ui.ts --project=Chromium",
+    "tests:api": "playwright test src/tests/api --config=src/configs/playwright.config.api.ts --project=Chromium",
+    "compress:artifacts": "node src/mailing/artifactsCompressor.js",
+    "send:email": "node src/mailing/sendEmail.js",
+    "flow-tests": "run-s --continue-on-error tests:e2e tests:api compress:artifacts send:email"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.45.2",
+    "@types/node": "^20.12.7",
+    "dotenv": "^16.4.5",
+    "npm-run-all": "^4.1.5",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "axios": "^1.7.2",
+    "nodemailer": "^6.9.16",
+    "playwright": "^1.45.2",
+    "xml2js": "^0.6.2"
+  }
+}

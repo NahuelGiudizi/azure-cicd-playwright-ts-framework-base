@@ -1,0 +1,115 @@
+pool:
+  name: "Azure VMSS Pool"
+
+steps:
+  # Checkout del repositorio
+  - checkout: self
+    displayName: "Checkout Repo"
+
+  # Instalar NodeJS
+  - task: NodeTool@0
+    inputs:
+      versionSource: "spec"
+      versionSpec: "21.6.x"
+    displayName: "Install NodeJS"
+
+  # Instalar dependencias
+  - script: npm ci
+    displayName: "Install Dependencies"
+
+  # Instalar Playwright Browsers
+  - script: npx playwright install --with-deps
+    displayName: "Install Playwright Browsers"
+
+  # Configurar variables de entorno
+  - script: |
+      echo BASE_URL=$(BASE_URL) >> .env
+      echo API_BASE_URL=$(API_BASE_URL) >> .env
+      echo TEST_EMAIL=$(TEST_EMAIL) >> .env
+      echo TEST_PASSWORD=$(TEST_PASSWORD) >> .env
+      echo TEST_USERNAME=$(TEST_USERNAME) >> .env
+      echo EMAIL_USER=$(EMAIL_USER) >> .env
+      echo EMAIL_PASS=$(EMAIL_PASS) >> .env
+      echo EMAIL_RECIPIENTS=$(EMAIL_RECIPIENTS) >> .env
+    displayName: "Setup Environment Variables"
+
+  # Ejecutar pruebas E2E (UI)
+  - script: npm run test:ui
+    displayName: "Execute E2E UI Tests"
+    continueOnError: true
+    env:
+      BASE_URL: $(BASE_URL)
+      TEST_EMAIL: $(TEST_EMAIL)
+      TEST_PASSWORD: $(TEST_PASSWORD)
+      TEST_USERNAME: $(TEST_USERNAME)
+
+  # Ejecutar pruebas API
+  - script: npm run test:api
+    displayName: "Execute API Tests"
+    continueOnError: true
+    env:
+      BASE_URL: $(BASE_URL)
+      API_BASE_URL: $(API_BASE_URL)
+
+  # Publicar artefactos de E2E
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: "results/playwright-report-e2e"
+      artifactName: "PlaywrightReportE2E"
+      publishLocation: "Container"
+    displayName: "Publish E2E Test Reports"
+    condition: always()
+
+  # Publicar artefactos de API
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: "results/playwright-report-api"
+      artifactName: "PlaywrightReportAPI"
+      publishLocation: "Container"
+    displayName: "Publish API Test Reports"
+    condition: always()
+
+  # Publicar screenshots y videos de fallos
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: "test-results"
+      artifactName: "TestFailureArtifacts"
+      publishLocation: "Container"
+    displayName: "Publish Test Failure Artifacts"
+    condition: failed()
+
+  # Publicar resultados de pruebas E2E
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: "JUnit"
+      testResultsFiles: "**/results/test-results-e2e/*.xml"
+      mergeTestResults: false
+      testRunTitle: "E2E UI Test Results"
+      publishRunAttachments: true
+    displayName: "Publish E2E Test Results"
+    condition: always()
+
+  # Publicar resultados de pruebas API
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: "JUnit"
+      testResultsFiles: "**/results/test-results-api/*.xml"
+      mergeTestResults: false
+      testRunTitle: "API Test Results"
+      publishRunAttachments: true
+    displayName: "Publish API Test Results"
+    condition: always()
+
+  # Comprimir artefactos
+  - script: npm run compress:artifacts
+    displayName: "Compress Test Artifacts"
+    condition: always()
+
+  # Enviar reporte por email
+  - script: npm run send:email
+    displayName: "Send Test Results via Email"
+    condition: always()
+    env:
+      EMAIL_USER: $(EMAIL_USER)
+      EMAIL_PASS: $(EMAIL_PASS)
+      EMAIL_RECIPIENTS: $(EMAIL_RECIPIENTS)

@@ -1,0 +1,93 @@
+{
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@api/*": [
+        "src/api-client/*"
+      ],
+      "@controllers/*": [
+        "src/api-client/controllers/*"
+      ],
+      "@utils/*": [
+        "src/tests/api/utils/*"
+      ],
+      "@mailing/*": [
+        "src/mailing/*"
+      ],
+      "@helpers/*": [
+        "src/helpers/*"
+      ],
+      "@testSetup": [
+        "src/helpers/test-setup.ts"
+      ],
+      "@models/*": [
+        "src/models/*"
+      ],
+      "@testData/*": [
+        "src/tests/data/*"
+      ],
+      "@apiFixtures/*": [
+        "src/fixtures/test-data-api.fixture.ts"
+      ],
+      "@uiFixtures/*": [
+        "src/fixtures/test-data-ui.fixture.ts"
+      ],
+      "@common/*": [
+        "src/tests/common/*"
+      ],
+      "@fixtures/*": [
+        "src/fixtures/*"
+      ],
+      "@page-objects/*": [
+        "src/tests/user-interface/models/*"
+      ],
+      "@e2e-tests/*": [
+        "src/tests/user-interface/*"
+      ],
+      "@api-tests/*": [
+        "src/tests/api"
+      ],
+      "@api-specs/*": [
+        "src/tests/api/specs/*"
+      ],
+      "@configs/*": [
+        "src/configs/*"
+      ],
+      "@data/*": [
+        "src/data/*"
+      ],
+      "@base/*": [
+        "src/api-client/base/*"
+      ],
+      "@menus/*": [
+        "src/tests/user-interface/models/menu/*"
+      ],
+      "@booking/*": [
+        "src/tests/user-interface/models/booking/*"
+      ],
+      "@service/*": [
+        "src/tests/user-interface/models/service/*"
+      ],
+      "@customer/*": [
+        "src/tests/user-interface/models/customer/*"
+      ],
+      "@settings/*": [
+        "src/tests/user-interface/models/settings/*"
+      ],
+      "@infraction/*": [
+        "src/tests/user-interface/models/infraction/*"
+      ],
+      "@tariff/*": [
+        "src/tests/user-interface/models/booking-tariff/*"
+      ]
+    },
+    "target": "es2016",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true
+  }
+}
