@@ -289,7 +289,7 @@ async function sendEmail({ xmlPath, zipPath, subject }) {
   }
 
   const mailOptions = {
-    from: `"Test Rent a Car" <${process.env.EMAIL_USER}>`,
+    from: `"Automation Email Reporter" <${process.env.EMAIL_USER}>`,
     to: process.env.EMAIL_RECIPIENTS,
     subject,
     html: htmlBody,

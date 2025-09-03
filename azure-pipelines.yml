@@ -1,5 +1,5 @@
 pool:
-  name: "Azure VMSS Pool"
+  name: "Default"
 
 steps:
   # Checkout del repositorio
@@ -34,7 +34,7 @@ steps:
     displayName: "Setup Environment Variables"
 
   # Ejecutar pruebas E2E (UI)
-  - script: npm run test:ui
+  - script: npm run tests:e2e
     displayName: "Execute E2E UI Tests"
     continueOnError: true
     env:
@@ -44,7 +44,7 @@ steps:
       TEST_USERNAME: $(TEST_USERNAME)
 
   # Ejecutar pruebas API
-  - script: npm run test:api
+  - script: npm run tests:api
     displayName: "Execute API Tests"
     continueOnError: true
     env:
