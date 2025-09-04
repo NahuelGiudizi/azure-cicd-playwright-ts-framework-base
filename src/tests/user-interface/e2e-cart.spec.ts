@@ -1,15 +1,15 @@
 // src/tests/user-interface/e2e-cart.spec.ts
-import { test, expect } from '@playwright/test';
+import { testWithUIData, expect } from '../../fixtures/test-data-ui-new.fixture';
 import { HomePage } from '../../models/pages/HomePage';
 import { ProductsPage } from '../../models/pages/ProductsPage';
 import { CartPage } from '../../models/pages/CartPage';
 
-test.describe('AutomationExercise - Shopping Cart Functionality', () => {
+testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () => {
   let homePage: HomePage;
   let productsPage: ProductsPage;
   let cartPage: CartPage;
 
-  test.beforeEach(async ({ page }) => {
+  testWithUIData.beforeEach(async ({ page }) => {
     homePage = new HomePage(page);
     productsPage = new ProductsPage(page);
     cartPage = new CartPage(page);
@@ -24,7 +24,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     await page.waitForSelector('img[alt="Website for automation practice"]', { timeout: 30000 });
   });
 
-  test(
+  testWithUIData(
     'Should navigate to cart page successfully',
     {
       annotation: [
@@ -34,7 +34,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Act
     await cartPage.navigateToCart();
 
@@ -52,7 +52,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     }
   });
 
-  test(
+  testWithUIData(
     'Should display empty cart initially',
     {
       annotation: [
@@ -62,7 +62,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Act
     await cartPage.navigateToCart();
 
@@ -83,7 +83,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     }
   });
 
-  test(
+  testWithUIData(
     'Should add products to cart and verify',
     {
       annotation: [
@@ -93,7 +93,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await productsPage.navigateToProducts();
 
@@ -125,7 +125,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     await expect(cartPage.deleteButtons.first()).toBeVisible();
   });
 
-  test(
+  testWithUIData(
     'Should verify cart item details',
     {
       annotation: [
@@ -135,7 +135,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange - Add a product to cart
     await productsPage.navigateToProducts();
     const allProductNames = await productsPage.getProductNames();
@@ -174,7 +174,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     await expect(cartPage.productLinks.first()).toHaveAttribute('href', /\/product_details\/\d+/);
   });
 
-  test(
+  testWithUIData(
     'Should remove product from cart',
     {
       annotation: [
@@ -184,7 +184,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange - Add a product to cart first
     await productsPage.navigateToProducts();
     await productsPage.addProductToCartAndViewCart(0);
@@ -215,7 +215,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     await cartPage.verifyCartStructure();
   });
 
-  test(
+  testWithUIData(
     'Should display product quantity correctly',
     {
       annotation: [
@@ -225,7 +225,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange - Add a product to cart
     await productsPage.navigateToProducts();
     await productsPage.addProductToCartAndViewCart(0);
@@ -250,7 +250,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     await cartPage.verifyCartTotal();
   });
 
-  test(
+  testWithUIData(
     'Should verify cart total calculation',
     {
       annotation: [
@@ -260,7 +260,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange - Add multiple products
     await productsPage.navigateToProducts();
     
@@ -307,7 +307,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     expect(displayedTotal).toBeGreaterThanOrEqual(0); // Allow for 0 if calculated differently
   });
 
-  test(
+  testWithUIData(
     'Should proceed to checkout',
     {
       annotation: [
@@ -317,7 +317,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange - Add a product to cart
     await productsPage.navigateToProducts();
     await productsPage.addProductToCartAndViewCart(0);
@@ -353,7 +353,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     }
   });
 
-  test(
+  testWithUIData(
     'Should continue shopping from empty cart',
     {
       annotation: [
@@ -363,7 +363,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange - Ensure cart is empty
     await cartPage.navigateToCart();
     
@@ -388,7 +388,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
 
   // Test removed - too complex for demo and has issues with multiple product handling
 
-  test(
+  testWithUIData(
     'Should verify cart persistence across navigation',
     {
       annotation: [
@@ -398,7 +398,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange - Add a product to cart
     await productsPage.navigateToProducts();
     await productsPage.addProductToCartAndViewCart(0);
@@ -434,7 +434,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
 
   // Test removed - too complex for demo and has timing issues with multiple product additions
 
-  test(
+  testWithUIData(
     'Should verify cart UI elements',
     {
       annotation: [
@@ -444,7 +444,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange - Add a product to cart first so UI elements are visible
     await productsPage.navigateToProducts();
     await productsPage.addProductToCart(0);
@@ -484,7 +484,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
     await expect(cartPage.subscriptionEmailInput).toHaveAttribute('type', 'email');
   });
 
-  test(
+  testWithUIData(
     'Should verify product data integrity',
     {
       annotation: [
@@ -494,7 +494,7 @@ test.describe('AutomationExercise - Shopping Cart Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange - Add a product to cart
     await productsPage.navigateToProducts();
     const originalProductNames = await productsPage.getProductNames();

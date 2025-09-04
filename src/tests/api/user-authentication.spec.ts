@@ -1,16 +1,16 @@
 // src/tests/api/user-authentication.spec.ts
-import { test, expect } from '@playwright/test';
+import { testWithAPIData, expect } from '../../fixtures/test-data-api-new.fixture';
 import { UserController, LoginRequest, CreateAccountRequest } from '../../api-client/controllers/UserController';
 
-test.describe('User Authentication API Tests', () => {
+testWithAPIData.describe('User Authentication API Tests', () => {
   let userController: UserController;
 
-  test.beforeEach(async ({ request }) => {
+  testWithAPIData.beforeEach(async ({ request }) => {
     userController = new UserController(request);
     await userController.init();
   });
 
-  test(
+  testWithAPIData(
     'API 7: POST To Verify Login with valid details - Should return 200',
     {
       annotation: [
@@ -20,12 +20,9 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async ({ }) => {
+    async ({ apiTestData }) => {
     // Arrange
-    const validCredentials: LoginRequest = {
-      email: process.env.TEST_EMAIL || 'test.user@ngexample.com',
-      password: process.env.TEST_PASSWORD || 'testpassword123'
-    };
+    const validCredentials: LoginRequest = apiTestData.userData.existing;
 
     // Act
     const { status, data } = await userController.verifyLogin(validCredentials);
@@ -38,7 +35,7 @@ test.describe('User Authentication API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'API 8: POST To Verify Login without email parameter - Should return 400',
     {
       annotation: [
@@ -48,7 +45,7 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await userController.verifyLoginWithoutEmail('testpassword123');
 
@@ -60,7 +57,7 @@ test.describe('User Authentication API Tests', () => {
   
   });
 
-  test(
+  testWithAPIData(
     'API 9: DELETE To Verify Login - Should return 405',
     {
       annotation: [
@@ -70,7 +67,7 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await userController.deleteVerifyLogin();
 
@@ -82,7 +79,7 @@ test.describe('User Authentication API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'API 10: POST To Verify Login with invalid details - Should return 404',
     {
       annotation: [
@@ -92,9 +89,9 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
-    const { status, data } = await userController.verifyLoginWithInvalidCredentials();
+    const { status, data } = await userController.verifyLogin(apiTestData.userData.invalid);
 
     // Assert
     expect(status).toBe(200);
@@ -104,7 +101,7 @@ test.describe('User Authentication API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'API 11: POST To Create/Register User Account - Should return 201',
     {
       annotation: [
@@ -114,26 +111,12 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Arrange
     const userData: CreateAccountRequest = {
+      ...apiTestData.userData.valid,
       name: `TestUser${Date.now()}`,
-      email: `test.user.${Date.now()}@example.com`,
-      password: 'testpassword123',
-      title: 'Mr',
-      birth_date: '15',
-      birth_month: 'January',
-      birth_year: '1990',
-      firstname: 'Test',
-      lastname: 'User',
-      company: 'Test Company Inc.',
-      address1: '123 Test Street',
-      address2: 'Apt 4B',
-      country: 'United States',
-      zipcode: '12345',
-      state: 'California',
-      city: 'Test City',
-      mobile_number: '+1234567890'
+      email: `test.user.${Date.now()}@example.com`
     };
 
     // Act
@@ -158,7 +141,7 @@ test.describe('User Authentication API Tests', () => {
     }
   });
 
-  test(
+  testWithAPIData(
     'API 12: DELETE METHOD To Delete User Account - Should return 200',
     {
       annotation: [
@@ -168,26 +151,14 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Arrange - First create a user to delete
     const userData: CreateAccountRequest = {
+      ...apiTestData.userData.valid,
       name: `DeleteTestUser${Date.now()}`,
       email: `delete.test.${Date.now()}@example.com`,
-      password: 'testpassword123',
-      title: 'Mrs',
-      birth_date: '20',
-      birth_month: 'February',
-      birth_year: '1985',
       firstname: 'Delete',
-      lastname: 'Test',
-      company: 'Delete Test Company',
-      address1: '456 Delete Street',
-      address2: '',
-      country: 'Canada',
-      zipcode: '54321',
-      state: 'Ontario',
-      city: 'Toronto',
-      mobile_number: '+1987654321'
+      lastname: 'Test'
     };
 
     // Create the user first
@@ -208,7 +179,7 @@ test.describe('User Authentication API Tests', () => {
     
   });
 
-  test(
+  testWithAPIData(
     'API 13: PUT METHOD To Update User Account - Should return 200',
     {
       annotation: [
@@ -218,26 +189,15 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Arrange - First create a user to update
     const originalData: CreateAccountRequest = {
+      ...apiTestData.userData.valid,
       name: `UpdateTestUser${Date.now()}`,
       email: `update.test.${Date.now()}@example.com`,
-      password: 'testpassword123',
-      title: 'Mr',
-      birth_date: '10',
-      birth_month: 'March',
-      birth_year: '1992',
       firstname: 'Update',
       lastname: 'Test',
-      company: 'Original Company',
-      address1: '789 Original Street',
-      address2: '',
-      country: 'Australia',
-      zipcode: '98765',
-      state: 'NSW',
-      city: 'Sydney',
-      mobile_number: '+61123456789'
+      company: 'Original Company'
     };
 
     // Create the user first
@@ -274,7 +234,7 @@ test.describe('User Authentication API Tests', () => {
     }
   });
 
-  test(
+  testWithAPIData(
     'API 14: GET user account detail by email - Should return 200',
     {
       annotation: [
@@ -284,26 +244,15 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Arrange - First create a user to retrieve
     const userData: CreateAccountRequest = {
+      ...apiTestData.userData.valid,
       name: `GetTestUser${Date.now()}`,
       email: `get.test.${Date.now()}@example.com`,
-      password: 'testpassword123',
-      title: 'Miss',
-      birth_date: '25',
-      birth_month: 'April',
-      birth_year: '1995',
       firstname: 'Get',
       lastname: 'Test',
-      company: 'Get Test Company',
-      address1: '321 Get Street',
-      address2: 'Unit 5',
-      country: 'United Kingdom',
-      zipcode: 'SW1A 1AA',
-      state: 'England',
-      city: 'London',
-      mobile_number: '+44123456789'
+      company: 'Get Test Company'
     };
 
     // Create the user first
@@ -339,7 +288,7 @@ test.describe('User Authentication API Tests', () => {
     }
   });
 
-  test(
+  testWithAPIData(
     'Edge Cases: Login with missing password parameter',
     {
       annotation: [
@@ -349,7 +298,7 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await userController.verifyLogin({
       email: 'test@example.com',
@@ -365,7 +314,7 @@ test.describe('User Authentication API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'Edge Cases: Create account with duplicate email',
     {
       annotation: [
@@ -375,26 +324,15 @@ test.describe('User Authentication API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Arrange
     const userData: CreateAccountRequest = {
+      ...apiTestData.userData.valid,
       name: 'Duplicate Test',
       email: `duplicate.test.${Date.now()}@example.com`,
-      password: 'testpassword123',
-      title: 'Mr',
-      birth_date: '1',
-      birth_month: 'January',
-      birth_year: '1990',
       firstname: 'Duplicate',
       lastname: 'Test',
-      company: 'Duplicate Company',
-      address1: '123 Duplicate Street',
-      address2: '',
-      country: 'United States',
-      zipcode: '12345',
-      state: 'California',
-      city: 'Test City',
-      mobile_number: '+1234567890'
+      company: 'Duplicate Company'
     };
 
     // Create the user first time

@@ -1,16 +1,16 @@
 // src/tests/api/products.spec.ts
-import { test, expect } from '@playwright/test';
+import { testWithAPIData, expect } from '../../fixtures/test-data-api-new.fixture';
 import { ProductsController, ProductsResponse } from '../../api-client/controllers/ProductsController';
 
-test.describe('Products API Tests', () => {
+testWithAPIData.describe('Products API Tests', () => {
   let productsController: ProductsController;
 
-  test.beforeEach(async ({ request }) => {
+  testWithAPIData.beforeEach(async ({ request }) => {
     productsController = new ProductsController(request);
     await productsController.init();
   });
 
-  test(
+  testWithAPIData(
     'API 1: GET All Products List - Should return 200 with products data',
     {
       annotation: [
@@ -20,7 +20,7 @@ test.describe('Products API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await productsController.getAllProducts();
 
@@ -30,6 +30,9 @@ test.describe('Products API Tests', () => {
     expect(data).toHaveProperty('products');
     expect(Array.isArray(data.products)).toBe(true);
     expect(data.products.length).toBeGreaterThan(0);
+    
+    // Use fixture data for validation
+    expect(data.products.length).toBeGreaterThanOrEqual(apiTestData.productsData.expectedProductCount);
 
     // Validate product structure
     const firstProduct = data.products[0];
@@ -43,7 +46,7 @@ test.describe('Products API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'API 2: POST To All Products List - Should return 405 Method Not Allowed',
     {
       annotation: [
@@ -53,7 +56,7 @@ test.describe('Products API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await productsController.postToProductsList();
 
@@ -65,7 +68,7 @@ test.describe('Products API Tests', () => {
  
   });
 
-  test(
+  testWithAPIData(
     'API 5: POST To Search Product - Should return 200 with filtered products',
     {
       annotation: [
@@ -75,9 +78,9 @@ test.describe('Products API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Arrange
-    const searchTerm = 'top';
+    const searchTerm = apiTestData.productsData.searchTerms.valid[0];
 
     // Act
     const { status, data } = await productsController.searchProduct(searchTerm);
@@ -99,7 +102,7 @@ test.describe('Products API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'API 6: POST To Search Product without parameter - Should return 400 Bad Request',
     {
       annotation: [
@@ -109,7 +112,7 @@ test.describe('Products API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await productsController.searchProductWithoutParameter();
 
@@ -121,7 +124,7 @@ test.describe('Products API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'Search for different product categories',
     {
       annotation: [
@@ -131,8 +134,8 @@ test.describe('Products API Tests', () => {
         },
       ],
     },
-    async () => {
-    const searchTerms = ['dress', 'tshirt', 'jean'];
+    async ({ apiTestData }) => {
+    const searchTerms = apiTestData.productsData.searchTerms.valid;
 
     for (const term of searchTerms) {
       const { status, data } = await productsController.searchProduct(term);
@@ -144,7 +147,7 @@ test.describe('Products API Tests', () => {
     }
   });
 
-  test(
+  testWithAPIData(
     'Verify product data integrity',
     {
       annotation: [
@@ -154,7 +157,7 @@ test.describe('Products API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Get all products
     const { status, data } = await productsController.getAllProducts();
     
@@ -173,7 +176,7 @@ test.describe('Products API Tests', () => {
     
   });
 
-  test(
+  testWithAPIData(
     'API Performance - Response time should be under 5 seconds',
     {
       annotation: [
@@ -183,7 +186,7 @@ test.describe('Products API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     const startTime = Date.now();
     
     const { status } = await productsController.getAllProducts();

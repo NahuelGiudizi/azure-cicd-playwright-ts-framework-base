@@ -1,0 +1,46 @@
+# Dependencias
+node_modules
+npm-debug.log*
+
+# Resultados de tests
+results/
+test-results/
+playwright-report-*/
+
+# Archivos de configuración local
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Archivos temporales
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Azure DevOps
+azure-pipelines.yml
+
+# Archivos de compresión
+*.zip
+
+# Screenshots y videos de tests
+screenshots/
+videos/
+

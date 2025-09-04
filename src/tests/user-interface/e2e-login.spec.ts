@@ -1,13 +1,13 @@
 // src/tests/user-interface/e2e-login.spec.ts
-import { test, expect } from '@playwright/test';
+import { testWithUIData, expect } from '../../fixtures/test-data-ui-new.fixture';
 import { HomePage } from '../../models/pages/HomePage';
 import { LoginPage } from '../../models/pages/LoginPage';
 
-test.describe('AutomationExercise - Login Functionality', () => {
+testWithUIData.describe('AutomationExercise - Login Functionality', () => {
   let homePage: HomePage;
   let loginPage: LoginPage;
 
-  test.beforeEach(async ({ page }) => {
+  testWithUIData.beforeEach(async ({ page }) => {
     homePage = new HomePage(page);
     loginPage = new LoginPage(page);
     
@@ -21,7 +21,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     await page.waitForSelector('img[alt="Website for automation practice"]', { timeout: 30000 });
   });
 
-  test(
+  testWithUIData(
     'Should successfully navigate to login page',
     {
       annotation: [
@@ -31,7 +31,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Act
     await loginPage.navigateToLoginPage();
 
@@ -61,7 +61,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     await expect(loginPage.signupFormTitle).toBeVisible();
   });
 
-  test(
+  testWithUIData(
     'Should display login form elements correctly',
     {
       annotation: [
@@ -71,7 +71,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange & Act
     await loginPage.navigateToLoginPage();
 
@@ -105,7 +105,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     await loginPage.verifyFormSecurity();
   });
 
-  test(
+  testWithUIData(
     'Should display signup form elements correctly',
     {
       annotation: [
@@ -115,7 +115,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange & Act
     await loginPage.navigateToLoginPage();
 
@@ -150,7 +150,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     expect(emailPlaceholder).toBeTruthy();
   });
 
-  test(
+  testWithUIData(
     'Should show validation message for invalid login',
     {
       annotation: [
@@ -160,13 +160,10 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await loginPage.navigateToLoginPage();
-    const invalidCredentials = {
-      email: 'invalid@test.com',
-      password: 'wrongpassword'
-    };
+    const invalidCredentials = uiTestData.invalidUser;
 
     // Act
     const loginSuccess = await loginPage.loginWithValidation(invalidCredentials.email, invalidCredentials.password);
@@ -192,7 +189,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     expect(emailValue).toBe(invalidCredentials.email);
   });
 
-  test(
+  testWithUIData(
     'Should handle empty email validation',
     {
       annotation: [
@@ -202,12 +199,12 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await loginPage.navigateToLoginPage();
 
     // Act
-    await loginPage.loginPasswordInput.fill('somepassword');
+    await loginPage.loginPasswordInput.fill(uiTestData.validUser.password);
     await loginPage.loginButton.click();
 
     // Assert - Browser should show HTML5 validation or prevent submission
@@ -215,7 +212,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     const passwordValue = await loginPage.getLoginPasswordValue();
     
     expect(emailValue).toBe('');
-    expect(passwordValue).toBe('somepassword');
+    expect(passwordValue).toBe(uiTestData.validUser.password);
     
     // Should stay on login page due to validation
     await expect(loginPage.page).toHaveURL(/.*login/);
@@ -232,7 +229,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     await expect(loginPage.loginPasswordInput).toBeVisible();
   });
 
-  test(
+  testWithUIData(
     'Should handle empty password validation',
     {
       annotation: [
@@ -242,19 +239,19 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await loginPage.navigateToLoginPage();
 
     // Act
-    await loginPage.loginEmailInput.fill('test@example.com');
+    await loginPage.loginEmailInput.fill(uiTestData.validUser.email);
     await loginPage.loginButton.click();
 
     // Assert - Browser should show HTML5 validation or prevent submission
     const emailValue = await loginPage.getLoginEmailValue();
     const passwordValue = await loginPage.getLoginPasswordValue();
     
-    expect(emailValue).toBe('test@example.com');
+    expect(emailValue).toBe(uiTestData.validUser.email);
     expect(passwordValue).toBe('');
     
     // Should stay on login page due to validation
@@ -275,7 +272,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
 
   // Test removed - too complex for demo (involves actual signup process)
 
-  test(
+  testWithUIData(
     'Should handle signup with potentially existing email',
     {
       annotation: [
@@ -285,11 +282,11 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await loginPage.navigateToLoginPage();
-    const existingEmail = 'test@test.com'; // Using a common email that might exist
-    const testName = 'Test User';
+    const existingEmail = uiTestData.testUser.email; // Using fixture data
+    const testName = uiTestData.testUser.name;
 
     // Act
     const signupSuccess = await loginPage.signupWithValidation(testName, existingEmail);
@@ -324,7 +321,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     }
   });
 
-  test(
+  testWithUIData(
     'Should maintain form state during navigation',
     {
       annotation: [
@@ -334,13 +331,13 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await loginPage.navigateToLoginPage();
-    const testEmail = 'test@example.com';
-    const testPassword = 'testpassword';
-    const testName = 'Test User';
-    const testSignupEmail = 'signup@test.com';
+    const testEmail = uiTestData.validUser.email;
+    const testPassword = uiTestData.validUser.password;
+    const testName = uiTestData.testUser.name;
+    const testSignupEmail = uiTestData.testUser.email;
 
     // Act - Fill both forms
     await loginPage.loginEmailInput.fill(testEmail);
@@ -372,7 +369,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     await expect(loginPage.signupButton).toBeEnabled();
   });
 
-  test(
+  testWithUIData(
     'Should handle special characters in email and password',
     {
       annotation: [
@@ -382,7 +379,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await loginPage.navigateToLoginPage();
     const specialEmail = 'test+special@test-domain.co.uk';
@@ -421,7 +418,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     await expect(loginPage.loginPasswordInput).toHaveAttribute('type', 'password');
   });
 
-  test(
+  testWithUIData(
     'Should verify page title and meta information',
     {
       annotation: [
@@ -431,7 +428,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange & Act
     await loginPage.navigateToLoginPage();
 
@@ -457,7 +454,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
     expect(viewportMeta).toContain('width=device-width');
   });
 
-  test(
+  testWithUIData(
     'Should test form accessibility features',
     {
       annotation: [
@@ -467,7 +464,7 @@ test.describe('AutomationExercise - Login Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange & Act
     await loginPage.navigateToLoginPage();
 

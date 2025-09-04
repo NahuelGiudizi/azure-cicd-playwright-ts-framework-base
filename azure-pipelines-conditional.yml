@@ -1,0 +1,229 @@
+# Azure DevOps Pipeline - Conditional OS Support
+# Este pipeline detecta automáticamente el OS y ejecuta comandos apropiados
+
+pool:
+  name: "Default"
+
+variables:
+  dockerImageName: "playwright-tests"
+
+steps:
+  # Checkout del repositorio
+  - checkout: self
+    displayName: "Checkout Repo"
+
+  # Detectar sistema operativo
+  - task: PowerShell@2
+    displayName: "Detect Operating System"
+    inputs:
+      targetType: "inline"
+      script: |
+        if ($IsWindows -or $env:OS -eq "Windows_NT") {
+          Write-Host "##vso[task.setvariable variable=isWindows]true"
+          Write-Host "Detected OS: Windows"
+        } else {
+          Write-Host "##vso[task.setvariable variable=isWindows]false"
+          Write-Host "Detected OS: Linux/Unix"
+        }
+
+  # Build Docker Image
+  - task: Docker@2
+    displayName: "Build Docker Image"
+    inputs:
+      command: "build"
+      dockerfile: "Dockerfile"
+      tags: "$(dockerImageName)"
+
+  # Setup Environment Variables - Windows
+  - task: PowerShell@2
+    displayName: "Setup Environment Variables (Windows)"
+    condition: eq(variables['isWindows'], 'true')
+    inputs:
+      targetType: "inline"
+      script: |
+        "BASE_URL=$(BASE_URL)" | Out-File -FilePath .env -Encoding UTF8
+        "API_BASE_URL=$(API_BASE_URL)" | Out-File -FilePath .env -Append -Encoding UTF8
+        "TEST_EMAIL=$(TEST_EMAIL)" | Out-File -FilePath .env -Append -Encoding UTF8
+        "TEST_PASSWORD=$(TEST_PASSWORD)" | Out-File -FilePath .env -Append -Encoding UTF8
+        "TEST_USERNAME=$(TEST_USERNAME)" | Out-File -FilePath .env -Append -Encoding UTF8
+        "EMAIL_USER=$(EMAIL_USER)" | Out-File -FilePath .env -Append -Encoding UTF8
+        "EMAIL_PASS=$(EMAIL_PASS)" | Out-File -FilePath .env -Append -Encoding UTF8
+        "EMAIL_RECIPIENTS=$(EMAIL_RECIPIENTS)" | Out-File -FilePath .env -Append -Encoding UTF8
+        Write-Host "Environment file created (Windows):"
+        Get-Content .env
+
+  # Setup Environment Variables - Linux
+  - task: Bash@3
+    displayName: "Setup Environment Variables (Linux)"
+    condition: eq(variables['isWindows'], 'false')
+    inputs:
+      targetType: "inline"
+      script: |
+        echo "BASE_URL=$(BASE_URL)" > .env
+        echo "API_BASE_URL=$(API_BASE_URL)" >> .env
+        echo "TEST_EMAIL=$(TEST_EMAIL)" >> .env
+        echo "TEST_PASSWORD=$(TEST_PASSWORD)" >> .env
+        echo "TEST_USERNAME=$(TEST_USERNAME)" >> .env
+        echo "EMAIL_USER=$(EMAIL_USER)" >> .env
+        echo "EMAIL_PASS=$(EMAIL_PASS)" >> .env
+        echo "EMAIL_RECIPIENTS=$(EMAIL_RECIPIENTS)" >> .env
+        echo "Environment file created (Linux):"
+        cat .env
+
+  # Create directories - Windows
+  - task: PowerShell@2
+    displayName: "Create Test Directories (Windows)"
+    condition: eq(variables['isWindows'], 'true')
+    inputs:
+      targetType: "inline"
+      script: |
+        $resultsPath = "$(Build.SourcesDirectory)\results"
+        $testResultsPath = "$(Build.SourcesDirectory)\test-results"
+        New-Item -ItemType Directory -Force -Path $resultsPath
+        New-Item -ItemType Directory -Force -Path $testResultsPath
+        Write-Host "Created directories: $resultsPath, $testResultsPath"
+
+  # Create directories - Linux
+  - task: Bash@3
+    displayName: "Create Test Directories (Linux)"
+    condition: eq(variables['isWindows'], 'false')
+    inputs:
+      targetType: "inline"
+      script: |
+        mkdir -p "$(Build.SourcesDirectory)/results"
+        mkdir -p "$(Build.SourcesDirectory)/test-results"
+        echo "Created directories: $(Build.SourcesDirectory)/results, $(Build.SourcesDirectory)/test-results"
+
+  # Execute E2E Tests - Windows
+  - task: PowerShell@2
+    displayName: "Execute E2E UI Tests (Windows)"
+    condition: eq(variables['isWindows'], 'true')
+    continueOnError: true
+    inputs:
+      targetType: "inline"
+      script: |
+        $resultsPath = "$(Build.SourcesDirectory)\results"
+        $testResultsPath = "$(Build.SourcesDirectory)\test-results"
+        $envFile = "$(Build.SourcesDirectory)\.env"
+
+        $dockerCmd = "docker run --rm --env-file `"$envFile`" -v `"$resultsPath`:/app/results -v `"$testResultsPath`:/app/test-results $(dockerImageName) npm run tests:e2e"
+        Write-Host "Executing: $dockerCmd"
+        Invoke-Expression $dockerCmd
+        Write-Host "E2E tests completed with exit code: $LASTEXITCODE"
+
+  # Execute E2E Tests - Linux
+  - task: Bash@3
+    displayName: "Execute E2E UI Tests (Linux)"
+    condition: eq(variables['isWindows'], 'false')
+    continueOnError: true
+    inputs:
+      targetType: "inline"
+      script: |
+        docker run --rm \
+          --env-file .env \
+          -v "$(Build.SourcesDirectory)/results":/app/results \
+          -v "$(Build.SourcesDirectory)/test-results":/app/test-results \
+          $(dockerImageName) npm run tests:e2e
+
+  # Execute API Tests - Windows
+  - task: PowerShell@2
+    displayName: "Execute API Tests (Windows)"
+    condition: eq(variables['isWindows'], 'true')
+    continueOnError: true
+    inputs:
+      targetType: "inline"
+      script: |
+        $resultsPath = "$(Build.SourcesDirectory)\results"
+        $testResultsPath = "$(Build.SourcesDirectory)\test-results"
+        $envFile = "$(Build.SourcesDirectory)\.env"
+
+        $dockerCmd = "docker run --rm --env-file `"$envFile`" -v `"$resultsPath`:/app/results -v `"$testResultsPath`:/app/test-results $(dockerImageName) npm run tests:api"
+        Write-Host "Executing: $dockerCmd"
+        Invoke-Expression $dockerCmd
+        Write-Host "API tests completed with exit code: $LASTEXITCODE"
+
+  # Execute API Tests - Linux
+  - task: Bash@3
+    displayName: "Execute API Tests (Linux)"
+    condition: eq(variables['isWindows'], 'false')
+    continueOnError: true
+    inputs:
+      targetType: "inline"
+      script: |
+        docker run --rm \
+          --env-file .env \
+          -v "$(Build.SourcesDirectory)/results":/app/results \
+          -v "$(Build.SourcesDirectory)/test-results":/app/test-results \
+          $(dockerImageName) npm run tests:api
+
+  # Publish Build Artifacts
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: "results/playwright-report-e2e"
+      artifactName: "PlaywrightReportE2E"
+      publishLocation: "Container"
+    displayName: "Publish E2E Test Reports"
+    condition: always()
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: "results/playwright-report-api"
+      artifactName: "PlaywrightReportAPI"
+      publishLocation: "Container"
+    displayName: "Publish API Test Reports"
+    condition: always()
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: "test-results"
+      artifactName: "TestFailureArtifacts"
+      publishLocation: "Container"
+    displayName: "Publish Test Failure Artifacts"
+    condition: failed()
+
+  # Publish Test Results
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: "JUnit"
+      testResultsFiles: "**/results/test-results-e2e/*.xml"
+      mergeTestResults: false
+      testRunTitle: "E2E UI Test Results"
+      publishRunAttachments: true
+    displayName: "Publish E2E Test Results"
+    condition: always()
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: "JUnit"
+      testResultsFiles: "**/results/test-results-api/*.xml"
+      mergeTestResults: false
+      testRunTitle: "API Test Results"
+      publishRunAttachments: true
+    displayName: "Publish API Test Results"
+    condition: always()
+
+  # Compress Artifacts and Send Email
+  - task: Docker@2
+    displayName: "Compress Test Artifacts"
+    condition: always()
+    inputs:
+      command: "run"
+      arguments: '--rm --env-file .env -v "$(Build.SourcesDirectory)/results":/app/results -v "$(Build.SourcesDirectory)/test-results":/app/test-results $(dockerImageName) npm run compress:artifacts'
+
+  - task: Docker@2
+    displayName: "Send Test Results via Email"
+    condition: always()
+    inputs:
+      command: "run"
+      arguments: '--rm --env-file .env -v "$(Build.SourcesDirectory)/results":/app/results -v "$(Build.SourcesDirectory)/test-results":/app/test-results $(dockerImageName) npm run send:email'
+
+  # Cleanup
+  - task: Bash@3
+    displayName: "Cleanup Docker Image"
+    condition: always()
+    inputs:
+      targetType: "inline"
+      script: |
+        echo "Cleaning up Docker image..."
+        docker rmi $(dockerImageName) -f || true
+        echo "Docker cleanup completed"

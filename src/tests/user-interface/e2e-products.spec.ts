@@ -1,13 +1,13 @@
 // src/tests/user-interface/e2e-products.spec.ts
-import { test, expect } from '@playwright/test';
+import { testWithUIData, expect } from '../../fixtures/test-data-ui-new.fixture';
 import { HomePage } from '../../models/pages/HomePage';
 import { ProductsPage } from '../../models/pages/ProductsPage';
 
-test.describe('AutomationExercise - Products Functionality', () => {
+testWithUIData.describe('AutomationExercise - Products Functionality', () => {
   let homePage: HomePage;
   let productsPage: ProductsPage;
 
-  test.beforeEach(async ({ page }) => {
+  testWithUIData.beforeEach(async ({ page }) => {
     homePage = new HomePage(page);
     productsPage = new ProductsPage(page);
     
@@ -21,7 +21,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
     await page.waitForSelector('img[alt="Website for automation practice"]', { timeout: 30000 });
   });
 
-  test(
+  testWithUIData(
     'Should navigate to products page successfully',
     {
       annotation: [
@@ -31,7 +31,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange & Act
     await productsPage.navigateToProducts();
 
@@ -47,7 +47,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
     expect(productCount).toBeGreaterThan(0);
   });
 
-  test(
+  testWithUIData(
     'Should display all product elements correctly',
     {
       annotation: [
@@ -57,7 +57,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await productsPage.navigateToProducts();
 
@@ -71,12 +71,12 @@ test.describe('AutomationExercise - Products Functionality', () => {
     // Verify individual product structure
     await productsPage.verifyProductStructure();
     
-    // Verify multiple products are displayed
+    // Verify multiple products are displayed using fixture data
     const productCount = await productsPage.getProductCount();
-    expect(productCount).toBeGreaterThan(5);
+    expect(productCount).toBeGreaterThanOrEqual(uiTestData.productTestData.expectedProductCount);
   });
 
-  test(
+  testWithUIData(
     'Should verify categories sidebar is visible',
     {
       annotation: [
@@ -86,7 +86,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange & Act
     await productsPage.navigateToProducts();
 
@@ -112,7 +112,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
     await expect(productsPage.categoryLinks.first()).toBeVisible();
   });
 
-  test(
+  testWithUIData(
     'Should verify brands sidebar is visible',
     {
       annotation: [
@@ -122,7 +122,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange & Act  
     await productsPage.navigateToProducts();
 
@@ -163,7 +163,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
   // - Should verify product grid layout (layout testing too complex) 
   // - Should handle rapid consecutive searches (rapid testing too complex)
 
-  test(
+  testWithUIData(
     'Should view individual product details',
     {
       annotation: [
@@ -173,7 +173,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await productsPage.navigateToProducts();
     
@@ -189,7 +189,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
     await expect(productsPage.page.locator('body')).toBeVisible();
   });
 
-  test(
+  testWithUIData(
     'Should add product to cart successfully',  
     {
       annotation: [
@@ -199,7 +199,7 @@ test.describe('AutomationExercise - Products Functionality', () => {
         },
       ],
     },
-    async () => {
+    async ({ uiTestData }) => {
     // Arrange
     await productsPage.navigateToProducts();
     

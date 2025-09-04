@@ -1,16 +1,16 @@
 // src/tests/api/brands.spec.ts
-import { test, expect } from '@playwright/test';
+import { testWithAPIData, expect } from '../../fixtures/test-data-api-new.fixture';
 import { BrandsController, BrandsResponse } from '../../api-client/controllers/BrandsController';
 
-test.describe('Brands API Tests', () => {
+testWithAPIData.describe('Brands API Tests', () => {
   let brandsController: BrandsController;
 
-  test.beforeEach(async ({ request }) => {
+  testWithAPIData.beforeEach(async ({ request }) => {
     brandsController = new BrandsController(request);
     await brandsController.init();
   });
 
-  test(
+  testWithAPIData(
     'API 3: GET All Brands List - Should return 200 with brands data',
     {
       annotation: [
@@ -20,7 +20,7 @@ test.describe('Brands API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await brandsController.getAllBrands();
 
@@ -30,6 +30,9 @@ test.describe('Brands API Tests', () => {
     expect(data).toHaveProperty('brands');
     expect(Array.isArray(data.brands)).toBe(true);
     expect(data.brands.length).toBeGreaterThan(0);
+    
+    // Use fixture data for validation
+    expect(data.brands.length).toBeGreaterThanOrEqual(apiTestData.brandsData.expectedBrandCount);
 
     // Validate brand structure
     const firstBrand = data.brands[0];
@@ -41,7 +44,7 @@ test.describe('Brands API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'API 4: PUT To All Brands List - Should return 405 Method Not Allowed',
     {
       annotation: [
@@ -51,7 +54,7 @@ test.describe('Brands API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await brandsController.putToBrandsList();
 
@@ -62,7 +65,7 @@ test.describe('Brands API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'Verify expected brands are present',
     {
       annotation: [
@@ -72,9 +75,9 @@ test.describe('Brands API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Arrange
-    const expectedBrands = ['Polo', 'H&M', 'Madame', 'Mast & Harbour', 'Babyhug', 'Allen Solly Junior', 'Kookie Kids', 'Biba'];
+    const expectedBrands = apiTestData.brandsData.sampleBrands;
 
     // Act
     const { status, data } = await brandsController.getAllBrands();
@@ -92,7 +95,7 @@ test.describe('Brands API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'Verify brand IDs are unique and sequential',
     {
       annotation: [
@@ -102,7 +105,7 @@ test.describe('Brands API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await brandsController.getAllBrands();
 
@@ -123,7 +126,7 @@ test.describe('Brands API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'Verify brand names are not empty',
     {
       annotation: [
@@ -133,7 +136,7 @@ test.describe('Brands API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Act
     const { status, data } = await brandsController.getAllBrands();
 
@@ -147,7 +150,7 @@ test.describe('Brands API Tests', () => {
 
   });
 
-  test(
+  testWithAPIData(
     'API Performance - Brands endpoint response time',
     {
       annotation: [
@@ -157,7 +160,7 @@ test.describe('Brands API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     const startTime = Date.now();
     
     const { status } = await brandsController.getAllBrands();
@@ -169,7 +172,7 @@ test.describe('Brands API Tests', () => {
     
   });
 
-  test(
+  testWithAPIData(
     'Compare brand count consistency across multiple requests',
     {
       annotation: [
@@ -179,7 +182,7 @@ test.describe('Brands API Tests', () => {
         },
       ],
     },
-    async () => {
+    async ({ apiTestData }) => {
     // Make multiple requests to ensure consistency
     const requests: Promise<{ status: number; data: BrandsResponse }>[] = [];
     for (let i = 0; i < 3; i++) {
