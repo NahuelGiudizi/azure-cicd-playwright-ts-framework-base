@@ -3,125 +3,128 @@ pool:
 
 variables:
   dockerImageName: "playwright-tests"
+  dockerTag: "latest"
+  dockerFullName: "$(dockerImageName):$(dockerTag)"
 
 steps:
-  # Checkout del repositorio
+  # ------------------------------
+  # 1. Checkout del repositorio
+  # ------------------------------
   - checkout: self
-    displayName: "Checkout Repo"
+    displayName: "Checkout repository"
 
-  # Build de la imagen Docker (multiplataforma)
+  # ------------------------------
+  # 2. Build de la imagen Docker
+  # ------------------------------
   - task: Docker@2
-    displayName: "Build Docker Image"
+    displayName: "Build Docker image"
     inputs:
-      command: "build"
-      dockerfile: "Dockerfile"
-      tags: "$(dockerImageName)"
+      command: build
+      dockerfile: Dockerfile
+      buildContext: "$(Build.SourcesDirectory)"
+      tags: "$(dockerFullName)"
 
-  # Configurar variables de entorno (multiplataforma)
-  - task: Bash@3
-    displayName: "Setup Environment Variables"
+  - script: docker images
+    displayName: "Verify Docker image built"
+
+  # ------------------------------
+  # 3. Setup de variables de entorno (.env)
+  # ------------------------------
+  - task: PowerShell@2
+    displayName: "Create .env file"
     inputs:
-      targetType: "inline"
+      targetType: inline
       script: |
-        echo "BASE_URL=$(BASE_URL)" > .env
-        echo "API_BASE_URL=$(API_BASE_URL)" >> .env
-        echo "TEST_EMAIL=$(TEST_EMAIL)" >> .env
-        echo "TEST_PASSWORD=$(TEST_PASSWORD)" >> .env
-        echo "TEST_USERNAME=$(TEST_USERNAME)" >> .env
-        echo "EMAIL_USER=$(EMAIL_USER)" >> .env
-        echo "EMAIL_PASS=$(EMAIL_PASS)" >> .env
-        echo "EMAIL_RECIPIENTS=$(EMAIL_RECIPIENTS)" >> .env
-        echo "Environment file created:"
-        cat .env
+        $envVars = @(
+          "BASE_URL=$(BASE_URL)",
+          "API_BASE_URL=$(API_BASE_URL)",
+          "TEST_EMAIL=$(TEST_EMAIL)",
+          "TEST_PASSWORD=$(TEST_PASSWORD)",
+          "TEST_USERNAME=$(TEST_USERNAME)",
+          "EMAIL_USER=$(EMAIL_USER)",
+          "EMAIL_PASS=$(EMAIL_PASS)",
+          "EMAIL_RECIPIENTS=$(EMAIL_RECIPIENTS)"
+        )
+        $envVars | Out-File -FilePath .env -Encoding UTF8
+        Write-Host "Generated .env:"
+        Get-Content .env
 
-  # Ejecutar pruebas E2E (UI) con Docker (multiplataforma)
+  # ------------------------------
+  # 4. Run E2E UI tests
+  # ------------------------------
   - task: Docker@2
-    displayName: "Execute E2E UI Tests with Docker"
+    displayName: "Run E2E UI tests"
     continueOnError: true
     inputs:
-      command: "run"
-      arguments: '--rm --env-file .env -v "$(Build.SourcesDirectory)/results":/app/results -v "$(Build.SourcesDirectory)/test-results":/app/test-results $(dockerImageName) npm run tests:e2e'
+      command: run
+      arguments: >
+        --rm --env-file .env
+        -v "$(Build.SourcesDirectory)/results:/app/results"
+        -v "$(Build.SourcesDirectory)/test-results:/app/test-results"
+        $(dockerFullName) npm run tests:e2e
 
-  # Ejecutar pruebas API con Docker (multiplataforma)
+  # ------------------------------
+  # 5. Run API tests
+  # ------------------------------
   - task: Docker@2
-    displayName: "Execute API Tests with Docker"
+    displayName: "Run API tests"
     continueOnError: true
     inputs:
-      command: "run"
-      arguments: '--rm --env-file .env -v "$(Build.SourcesDirectory)/results":/app/results -v "$(Build.SourcesDirectory)/test-results":/app/test-results $(dockerImageName) npm run tests:api'
+      command: run
+      arguments: >
+        --rm --env-file .env
+        -v "$(Build.SourcesDirectory)/results:/app/results"
+        -v "$(Build.SourcesDirectory)/test-results:/app/test-results"
+        $(dockerFullName) npm run tests:api
 
-  # Publicar artefactos de E2E
+  # ------------------------------
+  # 6. Publicación de reportes y artefactos
+  # ------------------------------
   - task: PublishBuildArtifacts@1
+    displayName: "Publish E2E Test Report"
     inputs:
       pathToPublish: "results/playwright-report-e2e"
       artifactName: "PlaywrightReportE2E"
-      publishLocation: "Container"
-    displayName: "Publish E2E Test Reports"
     condition: always()
 
-  # Publicar artefactos de API
   - task: PublishBuildArtifacts@1
+    displayName: "Publish API Test Report"
     inputs:
       pathToPublish: "results/playwright-report-api"
       artifactName: "PlaywrightReportAPI"
-      publishLocation: "Container"
-    displayName: "Publish API Test Reports"
     condition: always()
 
-  # Publicar screenshots y videos de fallos
   - task: PublishBuildArtifacts@1
+    displayName: "Publish Failure Screenshots & Videos"
     inputs:
       pathToPublish: "test-results"
-      artifactName: "TestFailureArtifacts"
-      publishLocation: "Container"
-    displayName: "Publish Test Failure Artifacts"
+      artifactName: "FailureArtifacts"
     condition: failed()
 
-  # Publicar resultados de pruebas E2E
   - task: PublishTestResults@2
+    displayName: "Publish E2E Test Results (JUnit)"
     inputs:
-      testResultsFormat: "JUnit"
+      testResultsFormat: JUnit
       testResultsFiles: "**/results/test-results-e2e/*.xml"
-      mergeTestResults: false
-      testRunTitle: "E2E UI Test Results"
       publishRunAttachments: true
-    displayName: "Publish E2E Test Results"
     condition: always()
 
-  # Publicar resultados de pruebas API
   - task: PublishTestResults@2
+    displayName: "Publish API Test Results (JUnit)"
     inputs:
-      testResultsFormat: "JUnit"
+      testResultsFormat: JUnit
       testResultsFiles: "**/results/test-results-api/*.xml"
-      mergeTestResults: false
-      testRunTitle: "API Test Results"
       publishRunAttachments: true
-    displayName: "Publish API Test Results"
     condition: always()
 
-  # Comprimir artefactos con Docker (multiplataforma)
-  - task: Docker@2
-    displayName: "Compress Test Artifacts with Docker"
+  # ------------------------------
+  # 7. Cleanup
+  # ------------------------------
+  - task: PowerShell@2
+    displayName: "Cleanup Docker image"
     condition: always()
     inputs:
-      command: "run"
-      arguments: '--rm --env-file .env -v "$(Build.SourcesDirectory)/results":/app/results -v "$(Build.SourcesDirectory)/test-results":/app/test-results $(dockerImageName) npm run compress:artifacts'
-
-  # Enviar reporte por email con Docker (multiplataforma)
-  - task: Docker@2
-    displayName: "Send Test Results via Email with Docker"
-    condition: always()
-    inputs:
-      command: "run"
-      arguments: '--rm --env-file .env -v "$(Build.SourcesDirectory)/results":/app/results -v "$(Build.SourcesDirectory)/test-results":/app/test-results $(dockerImageName) npm run send:email'
-
-  # Limpiar imagen Docker (multiplataforma)
-  - task: Bash@3
-    displayName: "Cleanup Docker Image"
-    condition: always()
-    inputs:
-      targetType: "inline"
+      targetType: inline
       script: |
-        echo "Cleaning up Docker image..."
-        docker rmi $(dockerImageName) -f || true
-        echo "Docker cleanup completed"
+        Write-Host "Cleaning Docker image..."
+        docker rmi $(dockerFullName) -f || Write-Host "Image not found, skip cleanup"
