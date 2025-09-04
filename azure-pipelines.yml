@@ -1,130 +1,115 @@
 pool:
-  name: "Default"
-
-variables:
-  dockerImageName: "playwright-tests"
-  dockerTag: "latest"
-  dockerFullName: "$(dockerImageName):$(dockerTag)"
+  name: "Azure VMSS Pool"
 
 steps:
-  # ------------------------------
-  # 1. Checkout del repositorio
-  # ------------------------------
+  # Checkout del repositorio
   - checkout: self
-    displayName: "Checkout repository"
+    displayName: "Checkout Repo"
 
-  # ------------------------------
-  # 2. Build de la imagen Docker
-  # ------------------------------
-  - task: Docker@2
-    displayName: "Build Docker image"
+  # Instalar NodeJS
+  - task: NodeTool@0
     inputs:
-      command: build
-      dockerfile: Dockerfile
-      buildContext: "$(Build.SourcesDirectory)"
-      tags: "$(dockerFullName)"
+      versionSource: "spec"
+      versionSpec: "21.6.x"
+    displayName: "Install NodeJS"
 
-  - script: docker images
-    displayName: "Verify Docker image built"
+  # Instalar dependencias
+  - script: npm ci
+    displayName: "Install Dependencies"
 
-  # ------------------------------
-  # 3. Setup de variables de entorno (.env)
-  # ------------------------------
-  - task: PowerShell@2
-    displayName: "Create .env file"
-    inputs:
-      targetType: inline
-      script: |
-        $envVars = @(
-          "BASE_URL=$(BASE_URL)",
-          "API_BASE_URL=$(API_BASE_URL)",
-          "TEST_EMAIL=$(TEST_EMAIL)",
-          "TEST_PASSWORD=$(TEST_PASSWORD)",
-          "TEST_USERNAME=$(TEST_USERNAME)",
-          "EMAIL_USER=$(EMAIL_USER)",
-          "EMAIL_PASS=$(EMAIL_PASS)",
-          "EMAIL_RECIPIENTS=$(EMAIL_RECIPIENTS)"
-        )
-        $envVars | Out-File -FilePath .env -Encoding UTF8
-        Write-Host "Generated .env:"
-        Get-Content .env
+  # Instalar Playwright Browsers
+  - script: npx playwright install --with-deps
+    displayName: "Install Playwright Browsers"
 
-  # ------------------------------
-  # 4. Run E2E UI tests
-  # ------------------------------
-  - task: Docker@2
-    displayName: "Run E2E UI tests"
+  # Configurar variables de entorno
+  - script: |
+      echo BASE_URL=$(BASE_URL) >> .env
+      echo API_BASE_URL=$(API_BASE_URL) >> .env
+      echo TEST_EMAIL=$(TEST_EMAIL) >> .env
+      echo TEST_PASSWORD=$(TEST_PASSWORD) >> .env
+      echo TEST_USERNAME=$(TEST_USERNAME) >> .env
+      echo EMAIL_USER=$(EMAIL_USER) >> .env
+      echo EMAIL_PASS=$(EMAIL_PASS) >> .env
+      echo EMAIL_RECIPIENTS=$(EMAIL_RECIPIENTS) >> .env
+    displayName: "Setup Environment Variables"
+
+  # Ejecutar pruebas E2E (UI)
+  - script: npm run test:ui
+    displayName: "Execute E2E UI Tests"
     continueOnError: true
-    inputs:
-      command: run
-      arguments: >
-        --rm --env-file .env
-        -v "$(Build.SourcesDirectory)/results:/app/results"
-        -v "$(Build.SourcesDirectory)/test-results:/app/test-results"
-        $(dockerFullName) npm run tests:e2e
+    env:
+      BASE_URL: $(BASE_URL)
+      TEST_EMAIL: $(TEST_EMAIL)
+      TEST_PASSWORD: $(TEST_PASSWORD)
+      TEST_USERNAME: $(TEST_USERNAME)
 
-  # ------------------------------
-  # 5. Run API tests
-  # ------------------------------
-  - task: Docker@2
-    displayName: "Run API tests"
+  # Ejecutar pruebas API
+  - script: npm run test:api
+    displayName: "Execute API Tests"
     continueOnError: true
-    inputs:
-      command: run
-      arguments: >
-        --rm --env-file .env
-        -v "$(Build.SourcesDirectory)/results:/app/results"
-        -v "$(Build.SourcesDirectory)/test-results:/app/test-results"
-        $(dockerFullName) npm run tests:api
+    env:
+      BASE_URL: $(BASE_URL)
+      API_BASE_URL: $(API_BASE_URL)
 
-  # ------------------------------
-  # 6. Publicación de reportes y artefactos
-  # ------------------------------
+  # Publicar artefactos de E2E
   - task: PublishBuildArtifacts@1
-    displayName: "Publish E2E Test Report"
     inputs:
       pathToPublish: "results/playwright-report-e2e"
       artifactName: "PlaywrightReportE2E"
+      publishLocation: "Container"
+    displayName: "Publish E2E Test Reports"
     condition: always()
 
+  # Publicar artefactos de API
   - task: PublishBuildArtifacts@1
-    displayName: "Publish API Test Report"
     inputs:
       pathToPublish: "results/playwright-report-api"
       artifactName: "PlaywrightReportAPI"
+      publishLocation: "Container"
+    displayName: "Publish API Test Reports"
     condition: always()
 
+  # Publicar screenshots y videos de fallos
   - task: PublishBuildArtifacts@1
-    displayName: "Publish Failure Screenshots & Videos"
     inputs:
       pathToPublish: "test-results"
-      artifactName: "FailureArtifacts"
+      artifactName: "TestFailureArtifacts"
+      publishLocation: "Container"
+    displayName: "Publish Test Failure Artifacts"
     condition: failed()
 
+  # Publicar resultados de pruebas E2E
   - task: PublishTestResults@2
-    displayName: "Publish E2E Test Results (JUnit)"
     inputs:
-      testResultsFormat: JUnit
+      testResultsFormat: "JUnit"
       testResultsFiles: "**/results/test-results-e2e/*.xml"
+      mergeTestResults: false
+      testRunTitle: "E2E UI Test Results"
       publishRunAttachments: true
+    displayName: "Publish E2E Test Results"
     condition: always()
 
+  # Publicar resultados de pruebas API
   - task: PublishTestResults@2
-    displayName: "Publish API Test Results (JUnit)"
     inputs:
-      testResultsFormat: JUnit
+      testResultsFormat: "JUnit"
       testResultsFiles: "**/results/test-results-api/*.xml"
+      mergeTestResults: false
+      testRunTitle: "API Test Results"
       publishRunAttachments: true
+    displayName: "Publish API Test Results"
     condition: always()
 
-  # ------------------------------
-  # 7. Cleanup
-  # ------------------------------
-  - task: PowerShell@2
-    displayName: "Cleanup Docker image"
+  # Comprimir artefactos
+  - script: npm run compress:artifacts
+    displayName: "Compress Test Artifacts"
     condition: always()
-    inputs:
-      targetType: inline
-      script: |
-        Write-Host "Cleaning Docker image..."
-        docker rmi $(dockerFullName) -f || Write-Host "Image not found, skip cleanup"
+
+  # Enviar reporte por email
+  - script: npm run send:email
+    displayName: "Send Test Results via Email"
+    condition: always()
+    env:
+      EMAIL_USER: $(EMAIL_USER)
+      EMAIL_PASS: $(EMAIL_PASS)
+      EMAIL_RECIPIENTS: $(EMAIL_RECIPIENTS)

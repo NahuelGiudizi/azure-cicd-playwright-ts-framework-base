@@ -40,11 +40,11 @@ AutomationExercise.Tests/
 
 ### Prerequisites
 
-- **Node.js** (version 18 or higher) **OR Docker**
+- **Node.js** (version 18 or higher)
 - **NPM** or **Yarn**
 - **Git**
 
-### Option 1: Local Installation
+### Installation
 
 1. **Clone the repository:**
 
@@ -68,28 +68,7 @@ AutomationExercise.Tests/
 4. **Setup environment variables:**
 
    ```bash
-   cp env.example .env
-   ```
-
-### Option 2: Docker Installation (Recommended)
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone [REPOSITORY_URL]
-   cd AutomationExercise.Tests
-   ```
-
-2. **Build Docker image:**
-
-   ```bash
-   docker build -t playwright-tests .
-   ```
-
-3. **Setup environment variables:**
-
-   ```bash
-   cp env.example .env
+   cp envexample.txt .env
    ```
 
    Edit `.env` file with your configuration:
@@ -109,58 +88,6 @@ AutomationExercise.Tests/
    EMAIL_PASS=your_app_password
    EMAIL_RECIPIENTS="recipient@example.com"
    ```
-
-## 🐳 Docker Usage
-
-### Quick Start with Docker Compose
-
-Run E2E tests:
-
-```bash
-docker-compose --profile e2e up
-```
-
-Run API tests:
-
-```bash
-docker-compose --profile api up
-```
-
-Run complete test suite:
-
-```bash
-docker-compose --profile flow up
-```
-
-### Individual Docker Commands
-
-Build image:
-
-```bash
-docker build -t playwright-tests .
-```
-
-Run E2E tests:
-
-```bash
-docker run --rm -v $(pwd)/results:/app/results playwright-tests npm run tests:e2e
-```
-
-Run API tests:
-
-```bash
-docker run --rm -v $(pwd)/results:/app/results playwright-tests npm run tests:api
-```
-
-### Development with Docker
-
-Interactive development shell:
-
-```bash
-docker-compose --profile dev up
-```
-
-This gives you a bash shell inside the container for development and debugging.
 
 ## 🎯 Test Execution
 
