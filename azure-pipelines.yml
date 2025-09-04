@@ -76,7 +76,7 @@ steps:
       artifactName: "TestFailureArtifacts"
       publishLocation: "Container"
     displayName: "Publish Test Failure Artifacts"
-    condition: failed()
+    condition: always()
 
   # Publicar resultados de pruebas E2E
   - task: PublishTestResults@2
