@@ -9,8 +9,11 @@
       "@controllers/*": [
         "src/api-client/controllers/*"
       ],
-      "@utils/*": [
-        "src/tests/api/utils/*"
+      "@types/*": [
+        "src/api-client/types/*"
+      ],
+      "@base/*": [
+        "src/api-client/base/*"
       ],
       "@mailing/*": [
         "src/mailing/*"
@@ -18,76 +21,68 @@
       "@helpers/*": [
         "src/helpers/*"
       ],
-      "@testSetup": [
-        "src/helpers/test-setup.ts"
-      ],
       "@models/*": [
         "src/models/*"
       ],
-      "@testData/*": [
-        "src/tests/data/*"
+      "@pages/*": [
+        "src/models/pages/*"
       ],
-      "@apiFixtures/*": [
-        "src/fixtures/test-data-api.fixture.ts"
-      ],
-      "@uiFixtures/*": [
-        "src/fixtures/test-data-ui.fixture.ts"
-      ],
-      "@common/*": [
-        "src/tests/common/*"
-      ],
-      "@fixtures/*": [
-        "src/fixtures/*"
-      ],
-      "@page-objects/*": [
-        "src/tests/user-interface/models/*"
-      ],
-      "@e2e-tests/*": [
-        "src/tests/user-interface/*"
-      ],
-      "@api-tests/*": [
-        "src/tests/api"
-      ],
-      "@api-specs/*": [
-        "src/tests/api/specs/*"
+      "@constants/*": [
+        "src/constants/*"
       ],
       "@configs/*": [
         "src/configs/*"
       ],
+      "@fixtures/*": [
+        "src/fixtures/*"
+      ],
       "@data/*": [
         "src/data/*"
       ],
-      "@base/*": [
-        "src/api-client/base/*"
+      "@tests/*": [
+        "src/tests/*"
       ],
-      "@menus/*": [
-        "src/tests/user-interface/models/menu/*"
+      "@api-tests/*": [
+        "src/tests/api/*"
       ],
-      "@booking/*": [
-        "src/tests/user-interface/models/booking/*"
-      ],
-      "@service/*": [
-        "src/tests/user-interface/models/service/*"
-      ],
-      "@customer/*": [
-        "src/tests/user-interface/models/customer/*"
-      ],
-      "@settings/*": [
-        "src/tests/user-interface/models/settings/*"
-      ],
-      "@infraction/*": [
-        "src/tests/user-interface/models/infraction/*"
-      ],
-      "@tariff/*": [
-        "src/tests/user-interface/models/booking-tariff/*"
+      "@ui-tests/*": [
+        "src/tests/user-interface/*"
       ]
     },
-    "target": "es2016",
-    "module": "commonjs",
+    "target": "es2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "lib": ["es2020", "dom"],
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "noImplicitAny": false,
-    "skipLibCheck": true
-  }
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "removeComments": false,
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "results",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }

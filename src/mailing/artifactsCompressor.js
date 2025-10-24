@@ -4,7 +4,7 @@ const archiver = require("archiver");
 
 function compressArtifacts() {
   try {
-    const rootDir = path.join(__dirname, "../../"); // Ruta absoluta a la raíz del repositorio
+    const rootDir = path.join(__dirname, "../../"); // Absolute path to repository root
     const archives = [
       {
         src: path.join(rootDir, "results/playwright-report-e2e"),

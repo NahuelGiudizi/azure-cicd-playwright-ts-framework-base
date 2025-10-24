@@ -1,6 +1,24 @@
 // src/tests/api/user-authentication.spec.ts
 import { testWithAPIData, expect } from '../../fixtures/test-data-api-new.fixture';
-import { UserController, LoginRequest, CreateAccountRequest } from '../../api-client/controllers/UserController';
+import { UserController } from '../../api-client/controllers/UserController';
+import { LoginRequestSchema, CreateAccountRequestSchema } from '../../api-client/schemas/request-schemas';
+import { LoginResponse, ErrorResponse } from '../../api-client/types/api-responses';
+import { ApiResponse } from '../../api-client/base/ApiClient';
+import { z } from 'zod';
+
+// Definir tipos basados en los esquemas Zod
+type LoginRequest = z.infer<typeof LoginRequestSchema>;
+type CreateAccountRequest = z.infer<typeof CreateAccountRequestSchema>;
+type UserDetailResponse = {
+  responseCode: number;
+  message: string;
+  user: {
+    email: string;
+    name: string;
+    first_name: string;
+    last_name: string;
+  };
+};
 
 testWithAPIData.describe('User Authentication API Tests', () => {
   let userController: UserController;
@@ -21,8 +39,23 @@ testWithAPIData.describe('User Authentication API Tests', () => {
       ],
     },
     async ({ apiTestData }) => {
-    // Arrange
-    const validCredentials: LoginRequest = apiTestData.userData.existing;
+    // Arrange - Create a user first, then test login
+    const userData: CreateAccountRequest = {
+      ...apiTestData.userData.valid,
+      name: `LoginTestUser${Date.now()}`,
+      email: `login.test.${Date.now()}@example.com`,
+      firstname: 'Login',
+      lastname: 'Test'
+    };
+
+    // Create the user first
+    const createResponse = await userController.createAccount(userData);
+    expect(createResponse.status).toBe(200);
+
+    const validCredentials: LoginRequest = {
+      email: userData.email,
+      password: userData.password
+    };
 
     // Act
     const { status, data } = await userController.verifyLogin(validCredentials);
@@ -31,6 +64,16 @@ testWithAPIData.describe('User Authentication API Tests', () => {
     expect(status).toBe(200);
     expect(data).toHaveProperty('responseCode', 200);
     expect(data).toHaveProperty('message', 'User exists!');
+
+    // Cleanup
+    try {
+      await userController.deleteAccount({
+        email: userData.email,
+        password: userData.password
+      });
+    } catch (error) {
+      console.warn('Cleanup failed:', error);
+    }
 
 
   });
@@ -267,8 +310,9 @@ testWithAPIData.describe('User Authentication API Tests', () => {
     expect(data).toHaveProperty('responseCode', 200);
     expect(data).toHaveProperty('user');
     
-    // Verify user details
-    const user = data.user;
+    // Type assertion para acceder a la propiedad user
+    const userDetailData = data as UserDetailResponse;
+    const user = userDetailData.user;
     expect(user).toHaveProperty('email', userData.email);
     expect(user).toHaveProperty('name', userData.name);
     expect(user).toHaveProperty('first_name', userData.firstname);
@@ -308,8 +352,11 @@ testWithAPIData.describe('User Authentication API Tests', () => {
     
     // Assert - API returns HTTP 200 but error details in response body
     expect(status).toBe(200);
-    expect([400, 404]).toContain(data.responseCode);
-    expect(data.message).toBeTruthy();
+    
+    // Type assertion para acceder a las propiedades de error
+    const errorData = data as ErrorResponse;
+    expect([400, 404]).toContain(errorData.responseCode);
+    expect(errorData.message).toBeTruthy();
     
 
   });
@@ -345,8 +392,11 @@ testWithAPIData.describe('User Authentication API Tests', () => {
     // Assert - Should handle duplicate email appropriately
   
     expect(status).toBe(200);
-    expect(data.responseCode).toBe(400);
-    expect(data.message).toBe('Email already exists!');
+    
+    // Type assertion para acceder a las propiedades de error
+    const errorData = data as ErrorResponse;
+    expect(errorData.responseCode).toBe(400);
+    expect(errorData.message).toBe('Email already exists!');
     
 
 

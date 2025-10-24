@@ -114,7 +114,7 @@ import {
 
 testWithUIData.describe("Login Tests", () => {
   testWithUIData.beforeEach(async ({ page }) => {
-    // Setup de páginas
+    // Setup pages
   });
 
   testWithUIData("login con credenciales inválidas", async ({ uiTestData }) => {

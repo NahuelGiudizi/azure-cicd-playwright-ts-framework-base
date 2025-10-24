@@ -1,6 +1,9 @@
 // src/tests/api/brands.spec.ts
 import { testWithAPIData, expect } from '../../fixtures/test-data-api-new.fixture';
-import { BrandsController, BrandsResponse } from '../../api-client/controllers/BrandsController';
+import { TIMEOUTS } from '../../constants/timeouts';
+import { BrandsController } from '../../api-client/controllers/BrandsController';
+import { BrandsResponse } from '../../api-client/types/api-responses';
+import { ApiResponse } from '../../api-client/base/ApiClient';
 
 testWithAPIData.describe('Brands API Tests', () => {
   let brandsController: BrandsController;
@@ -28,14 +31,17 @@ testWithAPIData.describe('Brands API Tests', () => {
     expect(status).toBe(200);
     expect(data).toHaveProperty('responseCode', 200);
     expect(data).toHaveProperty('brands');
-    expect(Array.isArray(data.brands)).toBe(true);
-    expect(data.brands.length).toBeGreaterThan(0);
+    
+    // Type assertion para acceder a la propiedad brands
+    const brandsData = data as BrandsResponse;
+    expect(Array.isArray(brandsData.brands)).toBe(true);
+    expect(brandsData.brands.length).toBeGreaterThan(0);
     
     // Use fixture data for validation
-    expect(data.brands.length).toBeGreaterThanOrEqual(apiTestData.brandsData.expectedBrandCount);
+    expect(brandsData.brands.length).toBeGreaterThanOrEqual(apiTestData.brandsData.expectedBrandCount);
 
     // Validate brand structure
-    const firstBrand = data.brands[0];
+    const firstBrand = brandsData.brands[0];
     expect(firstBrand).toHaveProperty('id');
     expect(firstBrand).toHaveProperty('brand');
     expect(typeof firstBrand.id).toBe('number');
@@ -86,7 +92,8 @@ testWithAPIData.describe('Brands API Tests', () => {
  
     expect(status).toBe(200);
     
-    const brandNames = data.brands.map(brand => brand.brand);
+    const brandsData = data as BrandsResponse;
+    const brandNames = brandsData.brands.map(brand => brand.brand);
     
     expectedBrands.forEach(expectedBrand => {
       const brandExists = brandNames.some(name => name.includes(expectedBrand));
@@ -112,7 +119,8 @@ testWithAPIData.describe('Brands API Tests', () => {
     // Assert
     expect(status).toBe(200);
     
-    const brandIds = data.brands.map(brand => brand.id);
+    const brandsData = data as BrandsResponse;
+    const brandIds = brandsData.brands.map(brand => brand.id);
     const uniqueIds = [...new Set(brandIds)];
     
     // Check all IDs are unique
@@ -143,7 +151,8 @@ testWithAPIData.describe('Brands API Tests', () => {
     // Assert
     expect(status).toBe(200);
     
-    data.brands.forEach((brand, index) => {
+    const brandsData = data as BrandsResponse;
+    brandsData.brands.forEach((brand, index) => {
       expect(brand.brand, `Brand ${index + 1} name should not be empty`).toBeTruthy();
       expect(brand.brand.trim().length, `Brand ${index + 1} name should not be just whitespace`).toBeGreaterThan(0);
     });
@@ -168,7 +177,7 @@ testWithAPIData.describe('Brands API Tests', () => {
     const responseTime = Date.now() - startTime;
     
     expect(status).toBe(200);
-    expect(responseTime).toBeLessThan(5000); // 5 seconds
+    expect(responseTime).toBeLessThan(TIMEOUTS.API_RESPONSE); // 5 seconds
     
   });
 
@@ -184,7 +193,7 @@ testWithAPIData.describe('Brands API Tests', () => {
     },
     async ({ apiTestData }) => {
     // Make multiple requests to ensure consistency
-    const requests: Promise<{ status: number; data: BrandsResponse }>[] = [];
+    const requests: Promise<{ status: number; data: ApiResponse<BrandsResponse> }>[] = [];
     for (let i = 0; i < 3; i++) {
       requests.push(brandsController.getAllBrands());
     }
@@ -197,7 +206,7 @@ testWithAPIData.describe('Brands API Tests', () => {
     });
 
     // All responses should have the same number of brands
-    const brandCounts = responses.map(response => response.data.brands.length);
+    const brandCounts = responses.map(response => (response.data as BrandsResponse).brands.length);
     const firstCount = brandCounts[0];
     
     brandCounts.forEach((count, index) => {

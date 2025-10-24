@@ -1,5 +1,6 @@
 // src/tests/user-interface/e2e-products.spec.ts
 import { testWithUIData, expect } from '../../fixtures/test-data-ui-new.fixture';
+import { TIMEOUTS } from '../../constants/timeouts';
 import { HomePage } from '../../models/pages/HomePage';
 import { ProductsPage } from '../../models/pages/ProductsPage';
 
@@ -14,11 +15,11 @@ testWithUIData.describe('AutomationExercise - Products Functionality', () => {
     // Navigate with increased timeout for demo site
     await page.goto('https://automationexercise.com/', { 
       waitUntil: 'domcontentloaded', 
-      timeout: 60000 
+      timeout: TIMEOUTS.PAGE_LOAD 
     });
     
     // Wait for essential elements without networkidle (too slow for demo)
-    await page.waitForSelector('img[alt="Website for automation practice"]', { timeout: 30000 });
+    await page.waitForSelector('img[alt="Website for automation practice"]', { timeout: TIMEOUTS.NAVIGATION });
   });
 
   testWithUIData(
@@ -150,18 +151,6 @@ testWithUIData.describe('AutomationExercise - Products Functionality', () => {
     // Verify brands section styling
     await expect(productsPage.page.locator('.brands_products')).toBeVisible();
   });
-
-  // Tests removed for demo stability:
-  // - Should search for products successfully (search functionality too complex)
-  // - Should handle empty search gracefully (edge case too complex)
-  // - Should verify category accordion functionality (accordion state management too complex)
-  // - Should display cart modal when adding product (modal timing issues)
-  // - Should verify product information consistency (data validation too complex)
-  // - Should test multiple search terms (multiple search scenarios too complex)
-  // - Should verify responsive behavior (responsive testing too complex)
-  // - Should verify page performance (performance testing too complex)
-  // - Should verify product grid layout (layout testing too complex) 
-  // - Should handle rapid consecutive searches (rapid testing too complex)
 
   testWithUIData(
     'Should view individual product details',

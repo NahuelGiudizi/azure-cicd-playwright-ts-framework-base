@@ -1,16 +1,7 @@
 // src/api-client/controllers/BrandsController.ts
 import { APIRequestContext } from '@playwright/test';
 import { ApiClient } from '../base/ApiClient';
-
-export interface Brand {
-    id: number;
-    brand: string;
-}
-
-export interface BrandsResponse {
-    responseCode: number;
-    brands: Brand[];
-}
+import { BrandsResponse, ErrorResponse } from '../types/api-responses';
 
 export class BrandsController extends ApiClient {
     constructor(request: APIRequestContext, baseUrl?: string) {
@@ -21,7 +12,7 @@ export class BrandsController extends ApiClient {
      * API 3: Get All Brands List
      * GET /brandsList
      */
-    async getAllBrands(): Promise<{ status: number, data: BrandsResponse }> {
+    async getAllBrands() {
         return await this.get<BrandsResponse>('/brandsList');
     }
 
@@ -29,8 +20,8 @@ export class BrandsController extends ApiClient {
      * API 4: PUT To All Brands List (should return 405)
      * PUT /brandsList
      */
-    async putToBrandsList(): Promise<{ status: number, data: any }> {
-        return await this.put<any>('/brandsList');
+    async putToBrandsList() {
+        return await this.put<ErrorResponse>('/brandsList');
     }
 }
 

@@ -1,0 +1,213 @@
+# azure-pipelines-improved.yml
+# Pipeline mejorado con mejor manejo de errores y notificaciones seguras
+
+pool:
+  name: "Azure VMSS Pool"
+
+variables:
+  # Variables de configuración
+  NODE_VERSION: "21.6.x"
+  PLAYWRIGHT_VERSION: "latest"
+  NOTIFICATIONS_ENABLED: "true"
+  INCLUDE_ARTIFACTS: "true"
+  INCLUDE_SCREENSHOTS: "false"
+
+stages:
+  - stage: Setup
+    displayName: "Setup Environment"
+    jobs:
+      - job: SetupJob
+        displayName: "Install Dependencies"
+        steps:
+          # Checkout del repositorio
+          - checkout: self
+            displayName: "Checkout Repo"
+
+          # Instalar NodeJS
+          - task: NodeTool@0
+            inputs:
+              versionSource: "spec"
+              versionSpec: $(NODE_VERSION)
+            displayName: "Install NodeJS"
+
+          # Verificar instalación de NodeJS
+          - script: |
+              node --version
+              npm --version
+            displayName: "Verify NodeJS Installation"
+
+          # Instalar dependencias
+          - script: npm ci
+            displayName: "Install Dependencies"
+            continueOnError: false
+
+          # Verificar instalación de dependencias
+          - script: |
+              npm list --depth=0
+              echo "Dependencies installed successfully"
+            displayName: "Verify Dependencies"
+
+          # Instalar Playwright Browsers
+          - script: npx playwright install --with-deps
+            displayName: "Install Playwright Browsers"
+            continueOnError: false
+
+          # Verificar instalación de Playwright
+          - script: |
+              npx playwright --version
+              echo "Playwright installed successfully"
+            displayName: "Verify Playwright Installation"
+
+  - stage: Tests
+    displayName: "Execute Tests"
+    dependsOn: Setup
+    condition: succeeded()
+    jobs:
+      - job: UITests
+        displayName: "UI Tests"
+        steps:
+          # Ejecutar pruebas E2E (UI)
+          - script: npm run test:ui
+            displayName: "Execute E2E UI Tests"
+            continueOnError: false
+            env:
+              BASE_URL: $(BASE_URL)
+              API_BASE_URL: $(API_BASE_URL)
+              TEST_EMAIL: $(TEST_EMAIL)
+              TEST_PASSWORD: $(TEST_PASSWORD)
+              TEST_USERNAME: $(TEST_USERNAME)
+              NOTIFICATIONS_ENABLED: $(NOTIFICATIONS_ENABLED)
+              INCLUDE_ARTIFACTS: $(INCLUDE_ARTIFACTS)
+              INCLUDE_SCREENSHOTS: $(INCLUDE_SCREENSHOTS)
+
+          # Publicar resultados de UI
+          - task: PublishTestResults@2
+            displayName: "Publish UI Test Results"
+            condition: always()
+            inputs:
+              testResultsFormat: "JUnit"
+              testResultsFiles: "test-results/ui/*.xml"
+              testRunTitle: "UI Tests"
+              mergeTestResults: true
+
+      - job: APITests
+        displayName: "API Tests"
+        steps:
+          # Ejecutar pruebas API
+          - script: npm run test:api
+            displayName: "Execute API Tests"
+            continueOnError: false
+            env:
+              BASE_URL: $(BASE_URL)
+              API_BASE_URL: $(API_BASE_URL)
+              TEST_EMAIL: $(TEST_EMAIL)
+              TEST_PASSWORD: $(TEST_PASSWORD)
+              TEST_USERNAME: $(TEST_USERNAME)
+              NOTIFICATIONS_ENABLED: $(NOTIFICATIONS_ENABLED)
+              INCLUDE_ARTIFACTS: $(INCLUDE_ARTIFACTS)
+
+          # Publicar resultados de API
+          - task: PublishTestResults@2
+            displayName: "Publish API Test Results"
+            condition: always()
+            inputs:
+              testResultsFormat: "JUnit"
+              testResultsFiles: "test-results/api/*.xml"
+              testRunTitle: "API Tests"
+              mergeTestResults: true
+
+      - job: UnitTests
+        displayName: "Unit Tests"
+        steps:
+          # Ejecutar pruebas unitarias
+          - script: npm run test:unit
+            displayName: "Execute Unit Tests"
+            continueOnError: false
+            env:
+              NODE_ENV: "test"
+
+          # Publicar resultados de unit tests
+          - task: PublishTestResults@2
+            displayName: "Publish Unit Test Results"
+            condition: always()
+            inputs:
+              testResultsFormat: "JUnit"
+              testResultsFiles: "test-results/unit/*.xml"
+              testRunTitle: "Unit Tests"
+              mergeTestResults: true
+
+  - stage: Artifacts
+    displayName: "Process Artifacts"
+    dependsOn: Tests
+    condition: always()
+    jobs:
+      - job: ArtifactsJob
+        displayName: "Generate and Publish Artifacts"
+        steps:
+          # Comprimir artefactos
+          - script: npm run compress:artifacts
+            displayName: "Compress Test Artifacts"
+            condition: always()
+            env:
+              ARTIFACTS_DIR: "test-results"
+
+          # Publicar artefactos
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish Test Artifacts"
+            condition: always()
+            inputs:
+              pathToPublish: "test-results"
+              artifactName: "test-results"
+              publishLocation: "Container"
+
+          # Generar reporte de cobertura si existe
+          - task: PublishCodeCoverageResults@1
+            displayName: "Publish Code Coverage"
+            condition: and(succeeded(), eq(variables['CodeCoverage'], 'true'))
+            inputs:
+              codeCoverageTool: "Cobertura"
+              summaryFileLocation: "coverage/cobertura-coverage.xml"
+              reportDirectory: "coverage"
+
+  - stage: Notifications
+    displayName: "Send Notifications"
+    dependsOn: [Tests, Artifacts]
+    condition: always()
+    jobs:
+      - job: NotificationsJob
+        displayName: "Send Test Notifications"
+        steps:
+          # Enviar notificaciones usando el sistema nativo
+          - script: node src/ci/send-notifications.js
+            displayName: "Send Test Notifications"
+            condition: always()
+            env:
+              NOTIFICATIONS_ENABLED: $(NOTIFICATIONS_ENABLED)
+              INCLUDE_ARTIFACTS: $(INCLUDE_ARTIFACTS)
+              INCLUDE_SCREENSHOTS: $(INCLUDE_SCREENSHOTS)
+              ARTIFACTS_DIR: "test-results"
+              WEBHOOK_URL: $(WEBHOOK_URL)
+
+          # Log de resultados finales
+          - script: |
+              echo "##vso[task.logissue type=info]Test execution completed"
+              echo "##vso[task.complete result=Succeeded]"
+            displayName: "Log Final Results"
+            condition: always()
+
+  - stage: Cleanup
+    displayName: "Cleanup"
+    dependsOn: [Tests, Artifacts, Notifications]
+    condition: always()
+    jobs:
+      - job: CleanupJob
+        displayName: "Cleanup Resources"
+        steps:
+          # Limpiar archivos temporales
+          - script: |
+              echo "Cleaning up temporary files..."
+              # Agregar comandos de limpieza si es necesario
+              echo "Cleanup completed"
+            displayName: "Cleanup Temporary Files"
+            condition: always()
+

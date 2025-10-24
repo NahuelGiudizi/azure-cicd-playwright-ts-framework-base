@@ -1,6 +1,14 @@
-// src/api-client/controllers/UserController.ts
+// src/api-client/controllers/UserController.ts - VERSIÓN SIMPLIFICADA
 import { APIRequestContext } from '@playwright/test';
 import { ApiClient } from '../base/ApiClient';
+import { UserAccountBuilder } from '../builders';
+import { 
+  LoginResponse, 
+  CreateAccountResponse, 
+  DeleteAccountResponse, 
+  UpdateAccountResponse, 
+  ErrorResponse 
+} from '../types/api-responses';
 
 export interface LoginRequest {
     email: string;
@@ -11,7 +19,7 @@ export interface CreateAccountRequest {
     name: string;
     email: string;
     password: string;
-    title: string; // Mr, Mrs, Miss
+    title: string;
     birth_date: string;
     birth_month: string;
     birth_year: string;
@@ -52,6 +60,9 @@ export interface UserDetailResponse {
     };
 }
 
+/**
+ * Controlador de usuario - Simple y directo
+ */
 export class UserController extends ApiClient {
     constructor(request: APIRequestContext, baseUrl?: string) {
         super(request, baseUrl);
@@ -59,37 +70,33 @@ export class UserController extends ApiClient {
 
     /**
      * API 7: POST To Verify Login with valid details
-     * POST /verifyLogin
      */
-    async verifyLogin(credentials: LoginRequest): Promise<{ status: number, data: any }> {
-        return await this.postForm<any>('/verifyLogin', {
+    async verifyLogin(credentials: LoginRequest) {
+        return await this.postForm<LoginResponse | ErrorResponse>('/verifyLogin', {
             email: credentials.email,
             password: credentials.password
         });
     }
 
     /**
-     * API 8: POST To Verify Login without email parameter (should return 400)
-     * POST /verifyLogin
+     * API 8: POST To Verify Login without email parameter
      */
-    async verifyLoginWithoutEmail(password: string): Promise<{ status: number, data: any }> {
-        return await this.postForm<any>('/verifyLogin', { password });
+    async verifyLoginWithoutEmail(password: string) {
+        return await this.postForm<ErrorResponse>('/verifyLogin', { password });
     }
 
     /**
-     * API 9: DELETE To Verify Login (should return 405)
-     * DELETE /verifyLogin
+     * API 9: DELETE To Verify Login
      */
-    async deleteVerifyLogin(): Promise<{ status: number, data: any }> {
-        return await this.delete<any>('/verifyLogin');
+    async deleteVerifyLogin() {
+        return await this.delete<ErrorResponse>('/verifyLogin');
     }
 
     /**
-     * API 10: POST To Verify Login with invalid details (should return 404)
-     * POST /verifyLogin
+     * API 10: POST To Verify Login with invalid details
      */
-    async verifyLoginWithInvalidCredentials(): Promise<{ status: number, data: any }> {
-        return await this.postForm<any>('/verifyLogin', {
+    async verifyLoginWithInvalidCredentials() {
+        return await this.postForm<ErrorResponse>('/verifyLogin', {
             email: 'invalid@example.com',
             password: 'wrongpassword'
         });
@@ -97,10 +104,9 @@ export class UserController extends ApiClient {
 
     /**
      * API 11: POST To Create/Register User Account
-     * POST /createAccount
      */
-    async createAccount(userData: CreateAccountRequest): Promise<{ status: number, data: any }> {
-        return await this.postForm<any>('/createAccount', {
+    async createAccount(userData: CreateAccountRequest) {
+        return await this.postForm<CreateAccountResponse>('/createAccount', {
             name: userData.name,
             email: userData.email,
             password: userData.password,
@@ -122,11 +128,26 @@ export class UserController extends ApiClient {
     }
 
     /**
-     * API 12: DELETE METHOD To Delete User Account
-     * DELETE /deleteAccount
+     * Crear cuenta usando Builder pattern
      */
-    async deleteAccount(credentials: LoginRequest): Promise<{ status: number, data: any }> {
-        return await this.delete<any>('/deleteAccount', {
+    async createAccountWithBuilder(builder: UserAccountBuilder) {
+        const userData = builder.build();
+        return await this.createAccount(userData);
+    }
+
+    /**
+     * Crear cuenta de prueba con datos por defecto
+     */
+    async createTestAccount() {
+        const testUserBuilder = UserAccountBuilder.createTestUser();
+        return await this.createAccountWithBuilder(testUserBuilder);
+    }
+
+    /**
+     * API 12: DELETE METHOD To Delete User Account
+     */
+    async deleteAccount(credentials: LoginRequest) {
+        return await this.delete<DeleteAccountResponse>('/deleteAccount', {
             email: credentials.email,
             password: credentials.password
         });
@@ -134,10 +155,9 @@ export class UserController extends ApiClient {
 
     /**
      * API 13: PUT METHOD To Update User Account
-     * PUT /updateAccount
      */
-    async updateAccount(userData: UpdateAccountRequest): Promise<{ status: number, data: any }> {
-        return await this.putForm<any>('/updateAccount', {
+    async updateAccount(userData: UpdateAccountRequest) {
+        return await this.putForm<UpdateAccountResponse>('/updateAccount', {
             name: userData.name,
             email: userData.email,
             password: userData.password,
@@ -159,10 +179,24 @@ export class UserController extends ApiClient {
     }
 
     /**
-     * API 14: GET user account detail by email
-     * GET /getUserDetailByEmail
+     * Actualizar cuenta usando Builder pattern
      */
-    async getUserDetailByEmail(email: string): Promise<{ status: number, data: UserDetailResponse }> {
+    async updateAccountWithBuilder(builder: UserAccountBuilder) {
+        const userData = builder.buildForUpdate();
+        return await this.updateAccount(userData);
+    }
+
+    /**
+     * API 14: GET user account detail by email
+     */
+    async getUserDetailByEmail(email: string) {
         return await this.get<UserDetailResponse>('/getUserDetailByEmail', { email });
+    }
+
+    /**
+     * Helper para crear un builder de usuario
+     */
+    createUserBuilder(): UserAccountBuilder {
+        return new UserAccountBuilder();
     }
 }

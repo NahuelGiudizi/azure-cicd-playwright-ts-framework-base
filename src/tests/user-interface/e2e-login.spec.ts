@@ -1,5 +1,6 @@
 // src/tests/user-interface/e2e-login.spec.ts
 import { testWithUIData, expect } from '../../fixtures/test-data-ui-new.fixture';
+import { TIMEOUTS } from '../../constants/timeouts';
 import { HomePage } from '../../models/pages/HomePage';
 import { LoginPage } from '../../models/pages/LoginPage';
 
@@ -14,11 +15,11 @@ testWithUIData.describe('AutomationExercise - Login Functionality', () => {
     // Navigate with increased timeout for demo site
     await page.goto('https://automationexercise.com/', { 
       waitUntil: 'domcontentloaded', 
-      timeout: 60000 
+      timeout: TIMEOUTS.PAGE_LOAD 
     });
     
     // Wait for essential elements without networkidle (too slow for demo)
-    await page.waitForSelector('img[alt="Website for automation practice"]', { timeout: 30000 });
+    await page.waitForSelector('img[alt="Website for automation practice"]', { timeout: TIMEOUTS.NAVIGATION });
   });
 
   testWithUIData(
@@ -269,8 +270,6 @@ testWithUIData.describe('AutomationExercise - Login Functionality', () => {
     expect(await loginPage.getLoginEmailValue()).toBe('');
     expect(await loginPage.getLoginPasswordValue()).toBe('');
   });
-
-  // Test removed - too complex for demo (involves actual signup process)
 
   testWithUIData(
     'Should handle signup with potentially existing email',

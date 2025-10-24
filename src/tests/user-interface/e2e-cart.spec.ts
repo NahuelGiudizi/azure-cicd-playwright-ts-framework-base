@@ -1,27 +1,29 @@
 // src/tests/user-interface/e2e-cart.spec.ts
 import { testWithUIData, expect } from '../../fixtures/test-data-ui-new.fixture';
-import { HomePage } from '../../models/pages/HomePage';
-import { ProductsPage } from '../../models/pages/ProductsPage';
-import { CartPage } from '../../models/pages/CartPage';
+import { TIMEOUTS } from '../../constants/timeouts';
+import { HomePage, ProductsPage, CartPage } from '../../models/pages';
+import { CartTestHelpers } from './helpers/cart-test-helpers';
 
 testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () => {
   let homePage: HomePage;
   let productsPage: ProductsPage;
   let cartPage: CartPage;
+  let cartHelper: CartTestHelpers;
 
   testWithUIData.beforeEach(async ({ page }) => {
     homePage = new HomePage(page);
     productsPage = new ProductsPage(page);
     cartPage = new CartPage(page);
+    cartHelper = new CartTestHelpers(cartPage, productsPage);
     
     // Navigate with increased timeout for demo site
     await page.goto('https://automationexercise.com/', { 
       waitUntil: 'domcontentloaded', 
-      timeout: 60000 
+      timeout: TIMEOUTS.PAGE_LOAD 
     });
     
     // Wait for essential elements without networkidle (too slow for demo)
-    await page.waitForSelector('img[alt="Website for automation practice"]', { timeout: 30000 });
+    await page.waitForSelector('img[alt="Website for automation practice"]', { timeout: TIMEOUTS.NAVIGATION });
   });
 
   testWithUIData(
@@ -79,7 +81,7 @@ testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () =
       // Cart has items from previous tests
       await cartPage.verifyCartHasItems();
       expect(itemCount).toBeGreaterThan(0);
-      await expect(cartPage.cartTable).toBeVisible();
+      await expect(cartPage.cartTable.cartTable).toBeVisible();
     }
   });
 
@@ -94,34 +96,14 @@ testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () =
       ],
     },
     async ({ uiTestData }) => {
-    // Arrange
-    await productsPage.navigateToProducts();
-
     // Act - Add first product to cart
-    await productsPage.addProductToCartAndViewCart(0);
+    await cartHelper.addProductAndNavigateToCart(0);
 
     // Assert
-    await cartPage.verifyCartHasItems();
-    const itemCount = await cartPage.getCartItemCount();
-    expect(itemCount).toBeGreaterThan(0);
-
-    const productNames = await cartPage.getProductNames();
-    const productPrices = await cartPage.getProductPrices();
-    const productQuantities = await cartPage.getProductQuantities();
+    await cartHelper.verifyCartState(1);
+    await cartHelper.verifyCartItemDetails();
     
-    expect(productNames.length).toBeGreaterThan(0);
-    expect(productPrices.length).toEqual(productNames.length);
-    expect(productQuantities.length).toEqual(productNames.length);
-    
-    // Verify each product has required data
-    for (let i = 0; i < productNames.length; i++) {
-      expect(productNames[i]).toBeTruthy();
-      expect(productPrices[i]).toBeTruthy();
-      expect(productQuantities[i]).toBeTruthy();
-      expect(productPrices[i]).toMatch(/Rs\./);
-    }
-    
-    await expect(cartPage.cartTable).toBeVisible();
+    await expect(cartPage.cartTable.cartTable).toBeVisible();
     await expect(cartPage.deleteButtons.first()).toBeVisible();
   });
 
@@ -262,49 +244,14 @@ testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () =
     },
     async ({ uiTestData }) => {
     // Arrange - Add multiple products
-    await productsPage.navigateToProducts();
-    
-    // Add first product
-    await productsPage.addProductToCart(0);
-    await productsPage.page.waitForTimeout(1000); // Wait between additions
-    
-    // Add second product
-    await productsPage.addProductToCart(1);
-    await productsPage.page.waitForTimeout(1000); // Wait before navigating
-    
-    // Navigate to cart to see all items
-    await cartPage.navigateToCart();
+    await cartHelper.addMultipleProductsToCart([0, 1]);
 
     // Assert
     const itemCount = await cartPage.getCartItemCount();
     expect(itemCount).toBeGreaterThanOrEqual(1);
     expect(itemCount).toBeLessThanOrEqual(2);
     
-    await cartPage.verifyCartTotal();
-    
-    const totalAmount = await cartPage.getTotalAmount();
-    expect(totalAmount).toMatch(/Rs\. \d+/);
-    
-    // Verify individual product totals
-    const productTotals = await cartPage.getProductTotals();
-    expect(productTotals.length).toBe(itemCount); // Use actual item count
-    
-    for (const total of productTotals) {
-      expect(total).toMatch(/Rs\. \d+/);
-      expect(parseFloat(total.replace(/[^\d.]/g, ''))).toBeGreaterThan(0);
-    }
-    
-    // Verify calculated total matches sum of individual totals
-    const calculatedTotal = productTotals.reduce((sum, total) => {
-      return sum + parseFloat(total.replace(/[^\d.]/g, ''));
-    }, 0);
-    
-    // Be more flexible with total calculation since it might be calculated differently
-    expect(calculatedTotal).toBeGreaterThan(0);
-    
-    // Just verify the total amount format is correct
-    const displayedTotal = parseFloat(totalAmount.replace(/[^\d.]/g, ''));
-    expect(displayedTotal).toBeGreaterThanOrEqual(0); // Allow for 0 if calculated differently
+    await cartHelper.verifyCartTotalCalculation();
   });
 
   testWithUIData(
@@ -342,14 +289,14 @@ testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () =
     } else if (isModalVisible) {
       // Modal appeared for guest checkout
       await cartPage.handleCheckoutModal();
-      await expect(cartPage.checkoutModal).toBeVisible();
-      await expect(cartPage.checkoutModalTitle).toHaveText('Checkout');
+      await expect(cartPage.checkoutModal.checkoutModal).toBeVisible();
+      await expect(cartPage.checkoutModal.checkoutModalTitle).toHaveText('Checkout');
       await expect(cartPage.registerLoginLink).toBeVisible();
       await expect(cartPage.continueOnCartButton).toBeVisible();
       
       // Test modal functionality
       await cartPage.closeCheckoutModal();
-      await expect(cartPage.checkoutModal).toBeHidden();
+      await expect(cartPage.checkoutModal.checkoutModal).toBeHidden();
     }
   });
 
@@ -385,8 +332,6 @@ testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () =
     await expect(productsPage.allProductsTitle).toBeVisible();
     await expect(productsPage.productItems.first()).toBeVisible();
   });
-
-  // Test removed - too complex for demo and has issues with multiple product handling
 
   testWithUIData(
     'Should verify cart persistence across navigation',
@@ -432,8 +377,6 @@ testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () =
     await cartPage.verifyCartTotal();
   });
 
-  // Test removed - too complex for demo and has timing issues with multiple product additions
-
   testWithUIData(
     'Should verify cart UI elements',
     {
@@ -456,7 +399,7 @@ testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () =
     await cartPage.verifyTableHeaders();
     
     // Header elements
-    await expect(cartPage.header).toBeVisible();
+    await expect(cartPage.header.header).toBeVisible();
     await expect(cartPage.logo).toBeVisible();
     await expect(cartPage.shopMenu).toBeVisible();
     
@@ -527,5 +470,4 @@ testWithUIData.describe('AutomationExercise - Shopping Cart Functionality', () =
     await expect(cartPage.productLinks.first()).toHaveAttribute('href', `/product_details/${cartProduct.productId}`);
   });
 
-  // Test removed - too complex for demo (responsive testing with multiple viewports)
 });

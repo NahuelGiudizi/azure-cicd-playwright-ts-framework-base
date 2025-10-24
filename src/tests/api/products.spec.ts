@@ -1,6 +1,9 @@
 // src/tests/api/products.spec.ts
 import { testWithAPIData, expect } from '../../fixtures/test-data-api-new.fixture';
-import { ProductsController, ProductsResponse } from '../../api-client/controllers/ProductsController';
+import { TIMEOUTS } from '../../constants/timeouts';
+import { ProductsController } from '../../api-client/controllers/ProductsController';
+import { ProductsResponse } from '../../api-client/types/api-responses';
+import { ApiResponse } from '../../api-client/base/ApiClient';
 
 testWithAPIData.describe('Products API Tests', () => {
   let productsController: ProductsController;
@@ -28,14 +31,17 @@ testWithAPIData.describe('Products API Tests', () => {
     expect(status).toBe(200);
     expect(data).toHaveProperty('responseCode', 200);
     expect(data).toHaveProperty('products');
-    expect(Array.isArray(data.products)).toBe(true);
-    expect(data.products.length).toBeGreaterThan(0);
+    
+    // Type assertion para acceder a la propiedad products
+    const productsData = data as ProductsResponse;
+    expect(Array.isArray(productsData.products)).toBe(true);
+    expect(productsData.products.length).toBeGreaterThan(0);
     
     // Use fixture data for validation
-    expect(data.products.length).toBeGreaterThanOrEqual(apiTestData.productsData.expectedProductCount);
+    expect(productsData.products.length).toBeGreaterThanOrEqual(apiTestData.productsData.expectedProductCount);
 
     // Validate product structure
-    const firstProduct = data.products[0];
+    const firstProduct = productsData.products[0];
     expect(firstProduct).toHaveProperty('id');
     expect(firstProduct).toHaveProperty('name');
     expect(firstProduct).toHaveProperty('price');
@@ -89,11 +95,13 @@ testWithAPIData.describe('Products API Tests', () => {
     expect(status).toBe(200);
     expect(data).toHaveProperty('responseCode', 200);
     expect(data).toHaveProperty('products');
-    expect(Array.isArray(data.products)).toBe(true);
+    
+    const productsData = data as ProductsResponse;
+    expect(Array.isArray(productsData.products)).toBe(true);
 
     // Verify search results contain the search term
-    if (data.products.length > 0) {
-      const searchResults = data.products.some(product => 
+    if (productsData.products.length > 0) {
+      const searchResults = productsData.products.some(product => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       expect(searchResults).toBe(true);
@@ -162,10 +170,12 @@ testWithAPIData.describe('Products API Tests', () => {
     const { status, data } = await productsController.getAllProducts();
     
     expect(status).toBe(200);
-    expect(data.products.length).toBeGreaterThan(0);
+    
+    const productsData = data as ProductsResponse;
+    expect(productsData.products.length).toBeGreaterThan(0);
 
     // Check each product has required fields
-    data.products.forEach((product, index) => {
+    productsData.products.forEach((product, index) => {
       expect(product.id, `Product ${index} should have id`).toBeDefined();
       expect(product.name, `Product ${index} should have name`).toBeTruthy();
       expect(product.price, `Product ${index} should have price`).toBeTruthy();
@@ -194,7 +204,7 @@ testWithAPIData.describe('Products API Tests', () => {
     const responseTime = Date.now() - startTime;
     
     expect(status).toBe(200);
-    expect(responseTime).toBeLessThan(5000); // 5 seconds
+    expect(responseTime).toBeLessThan(TIMEOUTS.API_RESPONSE); // 5 seconds
     
    
   });

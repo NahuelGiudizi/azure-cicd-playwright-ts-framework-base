@@ -1,11 +1,12 @@
 // playwright.config.api.ts
-import { PlaywrightTestConfig } from '@playwright/test'
+import { PlaywrightTestConfig } from '@playwright/test';
+import { baseConfig } from './base.config';
+
 const baseURL = process.env.API_BASE_URL || 'https://automationexercise.com/api';
 
-
 const config: PlaywrightTestConfig = {
+  ...baseConfig,
   timeout: 120000,
-  retries: process.env.CI ? 1 : 0,
   workers: 10,
   testDir: '../tests/api',
   reporter: [
@@ -18,8 +19,8 @@ const config: PlaywrightTestConfig = {
     }]
   ],
   use: {
+    ...baseConfig.use,
     baseURL: baseURL,
-    headless: true,
     viewport: { width: 1280, height: 720 },
     actionTimeout: 120000,
     ignoreHTTPSErrors: true,

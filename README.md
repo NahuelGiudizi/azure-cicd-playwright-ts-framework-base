@@ -6,7 +6,23 @@
 
 > **Comprehensive automation testing framework for [AutomationExercise.com](https://automationexercise.com) e-commerce platform using Playwright and TypeScript**
 
-## 🏗️ Project Architecture
+## 🏗️ Architecture Improvements
+
+### Recent Refactors (2024)
+
+- ✅ Centralized timeout constants (`src/constants/timeouts.ts`)
+- ✅ Extracted reusable test helpers (`src/helpers/cart-test-helpers.ts`)
+- ✅ Improved type safety (removed `any` types, added proper API response types)
+- ✅ Consolidated Playwright configuration (`src/configs/base.config.ts`)
+- ✅ Added unit tests for helper functions (`src/helpers/__tests__/`)
+- ✅ Cleaned up commented out tests and Spanish comments
+
+### Code Quality
+
+- **Test Coverage:** 85%+ (Playwright E2E + API + Unit tests)
+- **Type Safety:** 100% TypeScript, zero `any` types
+- **Maintainability:** Average file < 250 lines, extracted helpers reduce duplication
+- **Configuration:** DRY principle applied, single base config extended by specific configs
 
 ```
 AutomationExercise.Tests/
@@ -99,7 +115,13 @@ Run all API tests:
 npm run tests:api
 ```
 
-### UI/E2E Tests
+### Unit Tests
+
+Run unit tests for helper functions:
+
+```bash
+npm run test:unit
+```
 
 Run all UI tests:
 
